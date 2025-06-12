@@ -1,16 +1,23 @@
 {
   "name": "tech-chat-room",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "A retro Win95 style chat room with PostgreSQL history.",
+  "main": "server.js",
   "scripts": {
+    "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": [
+    "chat",
+    "socket.io",
+    "node",
+    "win95"
+  ],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
-    "express": "^5.1.0",
-    "socket.io": "^4.8.1"
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5",
+    "pg": "^8.11.5"
   }
 }
