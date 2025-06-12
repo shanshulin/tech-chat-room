@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>糯米团 Chat (Win95 Edition)</title>
+    <!-- 引入一款像素字体，这是复古风格的灵魂 -->
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- 登录窗口 -->
+    <div id="login-screen" class="window screen active">
+        <div class="title-bar">
+            <div class="title-bar-text">糯米团 - 用户登录</div>
+            <div class="title-bar-controls">
+                <div class="button-control">?</div>
+                <div class="button-control">X</div>
+            </div>
+        </div>
+        <div class="window-body">
+            <h1>欢迎使用 糯米团 Chat</h1>
+            <p>请输入登录密码:</p>
+            <input type="password" id="password-input">
+            <button id="login-btn">确定</button>
+            <p id="error-msg" class="error"></p>
+        </div>
+    </div>
+
+    <!-- 昵称设置窗口 -->
+    <div id="nickname-screen" class="window screen">
+         <div class="title-bar">
+            <div class="title-bar-text">创建用户</div>
+        </div>
+        <div class="window-body">
+            <h1>设置您的身份</h1>
+            <p>请输入一个昵称:</p>
+            <input type="text" id="nickname-input">
+            <button id="nickname-btn">进入聊天</button>
+        </div>
+    </div>
+
+    <!-- 聊天室主窗口 -->
+    <div id="chat-screen" class="chat-window window screen">
+        <div class="title-bar">
+            <div class="title-bar-text">糯米团 v1.0 - 在线聊天室</div>
+        </div>
+        <div class="chat-container">
+            <div id="users-list-container">
+                <p>在线用户:</p>
+                <ul id="users-list"></ul>
+            </div>
+            <div class="chat-main">
+                <div id="messages">
+                    <!-- 聊天消息会在这里生成 -->
+                </div>
+                <div class="chat-input-area">
+                    <input id="input" autocomplete="off" placeholder="在这里输入消息..." />
+                    <button id="send-btn">发送</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
+</body>
+</html>

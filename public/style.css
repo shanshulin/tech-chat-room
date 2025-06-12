@@ -1,0 +1,158 @@
+/* --- 全局样式 --- */
+body {
+    background: #008080; /* 经典的Win95桌面青色 */
+    font-family: 'VT323', monospace; /* 使用更柔和的复古像素字体 */
+    font-size: 16px;
+    color: #000;
+    height: 100vh;
+    padding-top: 20px;
+    box-sizing: border-box;
+}
+
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* --- 核心：Win95窗口样式 --- */
+.window {
+    background: #c0c0c0; /* 经典灰色 */
+    border: 1px solid;
+    border-top-color: #ffffff;
+    border-left-color: #ffffff;
+    border-right-color: #000000;
+    border-bottom-color: #000000;
+    box-shadow: 1px 1px 0 #000, 2px 2px 0 #000;
+    width: 90%;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* 标题栏 */
+.title-bar {
+    background: linear-gradient(to right, #000080, #1084d0); /* 经典蓝色渐变 */
+    color: #ffffff;
+    padding: 4px 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    text-shadow: 1px 1px #000000;
+}
+
+.title-bar-controls { display: flex; }
+.button-control {
+    background: #c0c0c0;
+    border: 1px solid;
+    border-top-color: #fff;
+    border-left-color: #fff;
+    border-right-color: #000;
+    border-bottom-color: #000;
+    width: 20px;
+    height: 20px;
+    margin-left: 3px;
+    text-align: center;
+    line-height: 20px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* 窗口内容 */
+.window-body {
+    padding: 20px;
+    text-align: center;
+}
+.window-body h1 { font-size: 1.2em; margin-top: 0; }
+.window-body p { margin: 15px 0 5px; }
+.error { color: #ff0000; height: 20px; font-weight: bold; }
+
+/* 按钮和输入框 */
+input[type="password"], input[type="text"], #input {
+    width: 90%;
+    padding: 5px;
+    border: 2px solid;
+    border-top-color: #000000;
+    border-left-color: #000000;
+    border-right-color: #ffffff;
+    border-bottom-color: #ffffff;
+    background: #ffffff;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+}
+input:focus { outline: none; }
+
+button {
+    padding: 8px 20px;
+    background: #c0c0c0;
+    border: 1px solid;
+    border-top-color: #fff;
+    border-left-color: #fff;
+    border-right-color: #000;
+    border-bottom-color: #000;
+    box-shadow: 1px 1px 0 #000;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    cursor: pointer;
+}
+button:active {
+    border-top-color: #000;
+    border-left-color: #000;
+    border-right-color: #fff;
+    border-bottom-color: #fff;
+    box-shadow: none;
+    transform: translate(1px, 1px);
+}
+
+
+/* --- 聊天窗口专属样式 --- */
+.chat-window { max-width: 700px; }
+.chat-container { display: flex; padding: 10px; }
+#users-list-container {
+    width: 150px;
+    padding-right: 10px;
+    border-right: 2px solid;
+    border-right-color: #808080;
+    margin-right: 10px;
+}
+#users-list-container p { margin: 0 0 10px; font-weight: bold; }
+#users-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+#users-list li {
+    padding: 2px 5px;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+}
+#users-list li::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAKtJREFUOI1jZGBgEGHAD97/UP///wMYgABiJmJgZWBgrsDBxMTECPz//w+G/Pz8D6Y2NDSMpDU1NUOcAAmg9vj4CcPS0tJ/kNqSkhLgLDAw8D+amZkR5AAyINpiY2OF2YABiJkGgvz//w8GqJ2dnaGkYGalY2BgYWBgaGFh4X+GjIyMDKY9Pz8/yAFU4OJi438gSgEqYWBgYGRgYODj42NwsbCwsDDjPzAwUGMAAEV8Rv25pKyKAAAAAElFTkSuQmCC');
+    margin-right: 5px;
+}
+
+.chat-main { flex-grow: 1; display: flex; flex-direction: column; }
+#messages {
+    flex-grow: 1;
+    height: 300px;
+    background: #fff;
+    padding: 10px;
+    overflow-y: scroll;
+    border: 2px solid;
+    border-top-color: #000;
+    border-left-color: #000;
+    border-right-color: #fff;
+    border-bottom-color: #fff;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+#messages .system-message { text-align: center; color: #808080; }
+#messages .nickname { font-weight: bold; }
+
+.chat-input-area { display: flex; }
+#input { width: 100%; margin: 0; margin-right: 10px; }
+#send-btn { width: 80px; }
