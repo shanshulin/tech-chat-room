@@ -1,111 +1,101 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const socket = io();
-    let myNickname = '';
+const express = require('express');
+const app = express();
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+const io = new Server(server);
+const { Pool } = require('pg'); // ★ 新增：引入pg库
 
-    // --- DOM 元素 ---
-    const screens = {
-        login: document.getElementById('login-screen'),
-        nickname: document.getElementById('nickname-screen'),
-        chat: document.getElementById('chat-screen')
-    };
-    const loginBtn = document.getElementById('login-btn');
-    const passwordInput = document.getElementById('password-input');
-    const errorMsg = document.getElementById('error-msg');
-    const nicknameBtn = document.getElementById('nickname-btn');
-    const nicknameInput = document.getElementById('nickname-input');
-    const sendBtn = document.getElementById('send-btn');
-    const input = document.getElementById('input');
-    const messages = document.getElementById('messages');
-    const usersList = document.querySelector('#users-list');
-    const chatWindowTitle = document.querySelector('#chat-screen .title-bar-text');
+// --- ★ 新增：数据库连接设置 ---
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL, // 从环境变量读取数据库秘密地址
+  ssl: {
+    rejectUnauthorized: false // Render的数据库需要这个SSL设置
+  }
+});
 
-    // --- 核心功能函数 ---
-    function switchScreen(screenName) {
-        Object.values(screens).forEach(screen => screen.classList.remove('active'));
-        screens[screenName].classList.add('active');
+// --- ★ 新增：一个函数，用来在程序启动时创建消息表（如果它还不存在） ---
+async function setupDatabase() {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        nickname VARCHAR(100) NOT NULL,
+        content TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    console.log('数据库表格 "messages" 已准备就绪。');
+  } catch (err) {
+    console.error('创建数据库表格失败:', err);
+  } finally {
+    client.release();
+  }
+}
+
+// 启动程序时，先设置好数据库
+setupDatabase();
+
+
+// --- 现有代码，基本不变 ---
+app.use(express.static('public'));
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/index.html');
+});
+
+const users = {};
+
+io.on('connection', async (socket) => { // ★ 将连接处理函数变为 async
+  console.log('一个用户连接了 id:', socket.id);
+
+  // --- ★ 新增：用户一连接，就去数据库读取最近的50条历史消息 ---
+  try {
+    const result = await pool.query('SELECT nickname, content FROM messages ORDER BY created_at ASC LIMIT 50');
+    // 将历史消息只发送给这个刚刚连接的用户
+    result.rows.forEach(msg => {
+      socket.emit('chat message', { nickname: msg.nickname, msg: msg.content });
+    });
+  } catch (err) {
+    console.error('读取历史消息失败:', err);
+  }
+
+
+  // --- 修改：当用户发送消息时，先存入数据库，再广播出去 ---
+  socket.on('chat message', async (msg) => { // ★ 将消息处理函数变为 async
+    if (socket.nickname) {
+      try {
+        // 1. 存入数据库 (写入记事本)
+        await pool.query('INSERT INTO messages (nickname, content) VALUES ($1, $2)', [socket.nickname, msg]);
+        
+        // 2. 广播给所有在线用户 (大声喊出来)
+        io.emit('chat message', { nickname: socket.nickname, msg: msg });
+      } catch (err) {
+        console.error('保存消息到数据库失败:', err);
+      }
     }
+  });
 
-    function sendMessage() {
-        if (input.value && !input.disabled) { // 增加一个判断，如果输入框被禁用了就不发送
-            socket.emit('chat message', input.value);
-            input.value = '';
-            input.focus();
-        }
+
+  // --- 以下代码与之前版本相同 ---
+  socket.on('join', (nickname) => {
+    socket.nickname = nickname;
+    users[socket.id] = nickname;
+    io.emit('system message', `${nickname} 加入了聊天室`);
+    io.emit('update users', Object.values(users));
+  });
+
+  socket.on('disconnect', () => {
+    if (socket.nickname) {
+      console.log(socket.nickname + ' 断开了连接');
+      delete users[socket.id];
+      io.emit('system message', `${socket.nickname} 离开了聊天室`);
+      io.emit('update users', Object.values(users));
     }
+  });
+});
 
-    // --- 事件绑定 ---
-    // 1. 登录
-    loginBtn.addEventListener('click', () => {
-        if (passwordInput.value === 'MWNMT') { switchScreen('nickname'); } 
-        else { errorMsg.textContent = '错误: 密码不正确。'; setTimeout(() => { errorMsg.textContent = ''; }, 3000); }
-    });
-    passwordInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') loginBtn.click(); });
-
-    // 2. 设置昵称
-    nicknameBtn.addEventListener('click', () => {
-        const nickname = nicknameInput.value.trim();
-        if (nickname) {
-            myNickname = nickname;
-            socket.emit('join', nickname);
-            switchScreen('chat');
-        }
-    });
-    nicknameInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') nicknameBtn.click(); });
-
-    // 3. 发送消息
-    sendBtn.addEventListener('click', sendMessage);
-    input.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendMessage(); });
-
-    // --- Socket.IO 核心事件处理 ---
-
-    // 接收聊天消息
-    socket.on('chat message', (data) => {
-        const item = document.createElement('div');
-        const nicknameSpan = document.createElement('span');
-        nicknameSpan.className = 'nickname';
-        nicknameSpan.textContent = `<${data.nickname}>: `;
-        item.appendChild(nicknameSpan);
-        item.append(document.createTextNode(data.msg));
-        messages.appendChild(item);
-        messages.scrollTop = messages.scrollHeight;
-    });
-
-    // 接收系统消息
-    socket.on('system message', (msg) => {
-        const item = document.createElement('div');
-        item.classList.add('system-message');
-        item.textContent = `*** ${msg} ***`;
-        messages.appendChild(item);
-        messages.scrollTop = messages.scrollHeight;
-    });
-    
-    // 更新在线用户列表
-    socket.on('update users', (users) => {
-        usersList.innerHTML = '';
-        users.forEach(user => {
-            const item = document.createElement('li');
-            item.textContent = user;
-            usersList.appendChild(item);
-        });
-    });
-
-    // ★★★ 新增：处理断线事件 ★★★
-    socket.on('disconnect', () => {
-        chatWindowTitle.textContent = '正在重新连接...'; // 给用户一个视觉反馈
-        input.disabled = true; // 禁用输入框，防止发送消息
-        sendBtn.disabled = true; // 禁用发送按钮
-    });
-
-    // ★★★ 新增：处理重连成功事件 ★★★
-    socket.on('connect', () => {
-        // 如果用户之前已经设置过昵称，说明他是在中途断线后重连的
-        if (myNickname) {
-            chatWindowTitle.textContent = '重连成功！正在重新加入...';
-            input.disabled = false;
-            sendBtn.disabled = false;
-            // 关键一步：带着之前的昵称，重新加入房间
-            socket.emit('join', myNickname); 
-        }
-        // 如果 myNickname 是空的，说明是用户第一次连接，不需要做任何事
-    });
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`服务器正在 http://localhost:${PORT} 上运行`);
 });
