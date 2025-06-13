@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const socket = io();
     let myNickname = '';
 
-    // --- DOM 元素 (确保这一部分是完整的！) ---
+    // --- DOM 元素 ---
     const screens = {
         login: document.getElementById('login-screen'),
         nickname: document.getElementById('nickname-screen'),
@@ -48,12 +48,28 @@ document.addEventListener('DOMContentLoaded', () => {
         contentWrapper.appendChild(nicknameSpan);
         contentWrapper.append(document.createTextNode(data.msg));
         item.appendChild(contentWrapper);
+
+        // ★★★ 修改点：在这里实现你想要的日期格式 ★★★
         if (data.timestamp) {
             const timestampSpan = document.createElement('span');
             timestampSpan.className = 'timestamp';
-            timestampSpan.textContent = new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const date = new Date(data.timestamp);
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1; // getMonth() 返回的是 0-11，所以要加 1
+            const day = date.getDate();
+            const hours = date.getHours();
+            const minutes = date.getMinutes();
+
+            // 将分钟格式化为两位数，例如 9 -> 09
+            const paddedMinutes = String(minutes).padStart(2, '0');
+
+            // 拼接成你想要的格式
+            timestampSpan.textContent = `${year}/${month}/${day} ${hours}:${paddedMinutes}`;
+
             item.appendChild(timestampSpan);
         }
+        
         messages.appendChild(item);
         messages.scrollTop = messages.scrollHeight;
     }
