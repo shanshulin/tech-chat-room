@@ -11,8 +11,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginBtn = document.getElementById('login-btn');
     const passwordInput = document.getElementById('password-input');
     const errorMsg = document.getElementById('error-msg');
+
     const nicknameBtn = document.getElementById('nickname-btn');
     const nicknameInput = document.getElementById('nickname-input');
+    
     const sendBtn = document.getElementById('send-btn');
     const input = document.getElementById('input');
     const messages = document.getElementById('messages');
@@ -21,12 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 核心功能函数 ---
     function switchScreen(screenName) {
-        Object.values(screens).forEach(screen => {
-            if (screen) screen.classList.remove('active');
-        });
-        if (screens[screenName]) {
-            screens[screenName].classList.add('active');
-        }
+        Object.values(screens).forEach(screen => screen.classList.remove('active'));
+        screens[screenName].classList.add('active');
     }
 
     function sendMessage() {
@@ -39,36 +37,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function addChatMessage(data) {
         const item = document.createElement('div');
-        item.className = 'message-item';
-        const contentWrapper = document.createElement('div');
-        contentWrapper.className = 'content-wrapper';
+
+        // ★ 新增: 创建一个时间戳元素
+        const timestampSpan = document.createElement('span');
+        timestampSpan.className = 'timestamp';
+        // 将ISO格式的日期字符串转换为更易读的本地时间格式 (例如 "14:30")
+        const date = new Date(data.created_at);
+        timestampSpan.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        
         const nicknameSpan = document.createElement('span');
         nicknameSpan.className = 'nickname';
         nicknameSpan.textContent = `<${data.nickname}>: `;
-        contentWrapper.appendChild(nicknameSpan);
-        contentWrapper.append(document.createTextNode(data.msg));
-        item.appendChild(contentWrapper);
 
-        // ★★★ 修改点：在这里实现你想要的日期格式 ★★★
-        if (data.timestamp) {
-            const timestampSpan = document.createElement('span');
-            timestampSpan.className = 'timestamp';
-
-            const date = new Date(data.timestamp);
-            const year = date.getFullYear();
-            const month = date.getMonth() + 1; // getMonth() 返回的是 0-11，所以要加 1
-            const day = date.getDate();
-            const hours = date.getHours();
-            const minutes = date.getMinutes();
-
-            // 将分钟格式化为两位数，例如 9 -> 09
-            const paddedMinutes = String(minutes).padStart(2, '0');
-
-            // 拼接成你想要的格式
-            timestampSpan.textContent = `${year}/${month}/${day} ${hours}:${paddedMinutes}`;
-
-            item.appendChild(timestampSpan);
-        }
+        // ★ 改变: 调整添加元素的顺序
+        item.appendChild(timestampSpan); // 先加时间
+        item.appendChild(nicknameSpan); // 再加昵称
+        item.append(document.createTextNode(data.msg)); // 最后加消息内容
         
         messages.appendChild(item);
         messages.scrollTop = messages.scrollHeight;
@@ -82,6 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
         messages.scrollTop = messages.scrollHeight;
     }
 
+
     // --- 事件绑定 ---
     loginBtn.addEventListener('click', () => {
         if (passwordInput.value === 'MWNMT') {
@@ -92,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     passwordInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') loginBtn.click(); });
+
     nicknameBtn.addEventListener('click', () => {
         const nickname = nicknameInput.value.trim();
         if (nickname) {
@@ -101,17 +87,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     nicknameInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') nicknameBtn.click(); });
+
     sendBtn.addEventListener('click', sendMessage);
     input.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendMessage(); });
 
+
     // --- Socket.IO 核心事件处理 ---
     socket.on('load history', (history) => {
-        messages.innerHTML = '';
-        history.forEach(data => { addChatMessage(data); });
+        messages.innerHTML = ''; 
+        history.forEach(data => {
+            addChatMessage(data);
+        });
         addSystemMessage('欢迎来到聊天室！');
     });
-    socket.on('chat message', (data) => { addChatMessage(data); });
-    socket.on('system message', (msg) => { addSystemMessage(msg); });
+
+    socket.on('chat message', (data) => {
+        addChatMessage(data);
+    });
+
+    socket.on('system message', (msg) => {
+        addSystemMessage(msg);
+    });
+    
     socket.on('update users', (users) => {
         usersList.innerHTML = '';
         users.forEach(user => {
@@ -120,12 +117,14 @@ document.addEventListener('DOMContentLoaded', () => {
             usersList.appendChild(item);
         });
     });
+
     socket.on('disconnect', () => {
         addSystemMessage('您已断开连接，正在尝试重连...');
         chatWindowTitle.textContent = '糯米团 v1.0 - 正在重新连接...';
         input.disabled = true;
         sendBtn.disabled = true;
     });
+
     socket.on('connect', () => {
         if (myNickname) {
             chatWindowTitle.textContent = '糯米团 v1.0 - 在线聊天室';
