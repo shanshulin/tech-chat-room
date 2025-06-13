@@ -150,8 +150,8 @@ button:active {
     padding: 2px 5px;
     margin-bottom: 5px;
     display: flex;
-    align-items: center;
-    word-break: break-all;
+    align-items: flex-start; /* 改为 flex-start 以便图标和文字顶部对齐 */
+    word-break: break-all;   /* ★ 关键：让长名字可以自动换行 */
 }
 #users-list li::before {
     content: '';
@@ -160,6 +160,7 @@ button:active {
     height: 16px;
     background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAKtJREFUOI1jZGBgEGHAD97/UP///wMYgABiJmJgZWBgrsDBxMTECPz//w+G/Pz8D6Y2NDSMpDU1NUOcAAmg9vj4CcPS0tJ/kNqSkhLgLDAw8D+amZkR5AAyINpiY2OF2YABiJkGgvz//w8GqJ2dnaGkYGalY2BgYWBgaGFh4X+GjIyMDKY9Pz8/yAFU4OJi438gSgEqYWBgYGRgYODj42NwsbCwsDDjPzAwUGMAAEV8Rv25pKyKAAAAAElFTkSuQmCC');
     margin-right: 5px;
+    margin-top: 2px; /* 微调图标垂直位置 */
     flex-shrink: 0;
 }
 
@@ -203,7 +204,7 @@ button:active {
     flex-shrink: 0;
 }
 
-/* --- 新增：时间戳样式 --- */
+/* --- 时间戳样式 --- */
 .message-item {
     display: flex;
     justify-content: space-between; /* 让内容和时间戳两端对齐 */
