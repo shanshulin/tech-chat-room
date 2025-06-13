@@ -1,20 +1,19 @@
 /* --- 全局样式 --- */
 body {
-    background: #008080; /* 经典的Win95桌面青色 */
-    font-family: 'VT323', monospace; /* 使用柔和的复古像素字体 */
+    background: #008080;
+    font-family: 'VT323', monospace;
     font-size: 16px;
     color: #000;
     height: 100vh;
     padding-top: 20px;
     box-sizing: border-box;
 }
-
 .screen { display: none; }
 .screen.active { display: block; }
 
-/* --- 核心：Win95窗口样式 --- */
+/* --- Win95窗口样式 --- */
 .window {
-    background: #c0c0c0; /* 经典灰色 */
+    background: #c0c0c0;
     border: 1px solid;
     border-top-color: #ffffff;
     border-left-color: #ffffff;
@@ -25,10 +24,8 @@ body {
     max-width: 500px;
     margin: 0 auto;
 }
-
-/* 标题栏 */
 .title-bar {
-    background: linear-gradient(to right, #000080, #1084d0); /* 经典蓝色渐变 */
+    background: linear-gradient(to right, #000080, #1084d0);
     color: #ffffff;
     padding: 4px 6px;
     display: flex;
@@ -37,7 +34,6 @@ body {
     font-weight: bold;
     text-shadow: 1px 1px #000000;
 }
-
 .title-bar-controls { display: flex; }
 .button-control {
     background: #c0c0c0;
@@ -54,8 +50,6 @@ body {
     font-size: 14px;
     font-weight: bold;
 }
-
-/* 窗口内容 */
 .window-body {
     padding: 20px;
     text-align: center;
@@ -64,7 +58,7 @@ body {
 .window-body p { margin: 15px 0 5px; }
 .error { color: #ff0000; height: 20px; font-weight: bold; }
 
-/* 按钮和输入框 */
+/* --- 按钮和输入框 --- */
 input[type="password"], input[type="text"], #input {
     width: 90%;
     padding: 5px;
@@ -78,7 +72,6 @@ input[type="password"], input[type="text"], #input {
     font-size: 16px;
 }
 input:focus { outline: none; }
-
 button {
     padding: 8px 20px;
     background: #c0c0c0;
@@ -101,40 +94,23 @@ button:active {
     transform: translate(1px, 1px);
 }
 
-
-/* --- 聊天窗口专属样式 --- */
+/* --- 聊天窗口 --- */
 .chat-window { max-width: 700px; }
 .chat-container { display: flex; padding: 10px; }
 #users-list-container {
     width: 150px;
     padding-right: 10px;
-    border-right: 2px solid;
-    border-right-color: #808080;
+    border-right: 2px solid #808080;
     margin-right: 10px;
 }
 #users-list-container p { margin: 0 0 10px; font-weight: bold; }
-#users-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    max-height: 300px;
-    overflow-y: auto;
-}
-#users-list li {
-    padding: 2px 5px;
-    margin-bottom: 5px;
-    display: flex;
-    align-items: center;
-}
+#users-list { list-style: none; padding: 0; margin: 0; max-height: 300px; overflow-y: auto; }
+#users-list li { padding: 2px 5px; margin-bottom: 5px; display: flex; align-items: center; }
 #users-list li::before {
-    content: '';
-    display: inline-block;
-    width: 16px;
-    height: 16px;
+    content: ''; display: inline-block; width: 16px; height: 16px;
     background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAKtJREFUOI1jZGBgEGHAD97/UP///wMYgABiJmJgZWBgrsDBxMTECPz//w+G/Pz8D6Y2NDSMpDU1NUOcAAmg9vj4CcPS0tJ/kNqSkhLgLDAw8D+amZkR5AAyINpiY2OF2YABiJkGgvz//w8GqJ2dnaGkYGalY2BgYWBgaGFh4X+GjIyMDKY9Pz8/yAFU4OJi438gSgEqYWBgYGRgYODj42NwsbCwsDDjPzAwUGMAAEV8Rv25pKyKAAAAAElFTkSuQmCC');
     margin-right: 5px;
 }
-
 .chat-main { flex-grow: 1; display: flex; flex-direction: column; }
 #messages {
     flex-grow: 1;
@@ -152,33 +128,20 @@ button:active {
 }
 #messages .system-message { text-align: center; color: #808080; }
 #messages .nickname { font-weight: bold; }
-
 .chat-input-area { display: flex; }
 #input { width: 100%; margin: 0; margin-right: 10px; }
 #send-btn { width: 80px; }
+.timestamp { color: #808080; margin-right: 8px; font-size: 14px; }
 
-/* 时间戳样式 */
-.timestamp {
-    color: #808080;
-    margin-right: 8px;
-    font-size: 14px;
-}
-
-/* --- 工具栏和表情面板样式 --- */
-.toolbar {
-    position: relative;
-    border-top: 2px solid #808080;
-    padding: 2px;
-}
-
+/* --- 工具栏和表情面板 --- */
+.toolbar { position: relative; border-top: 2px solid #808080; padding: 2px; display: flex; gap: 2px; }
 .toolbar-btn {
-    width: auto; /* ★ 改变：让宽度自适应内容 */
+    width: auto;
     height: 28px;
-    padding: 0 8px; /* ★ 改变：增加左右内边距 */
-    font-size: 16px; /* ★ 改变：调整字体大小 */
+    padding: 0 8px;
+    font-size: 16px;
     line-height: 28px;
 }
-
 .emoji-panel {
     position: absolute;
     bottom: 100%;
@@ -191,17 +154,13 @@ button:active {
     border-bottom-color: #000000;
     padding: 5px;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); /* ★ 改变：响应式布局，自动填充 */
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
     gap: 5px;
     box-shadow: 1px 1px 0 #000;
-    width: 100%; /* ★ 改变：占满父容器宽度 */
-    box-sizing: border-box; /* ★ 改变：确保padding和border不影响总宽度 */
+    width: 100%;
+    box-sizing: border-box;
 }
-
-.emoji-panel.hidden {
-    display: none;
-}
-
+.emoji-panel.hidden { display: none; }
 .emoji-item {
     padding: 5px;
     text-align: center;
@@ -209,11 +168,20 @@ button:active {
     border: 1px solid transparent;
     font-size: 14px;
     white-space: nowrap;
-    overflow: hidden; /* ★ 改变：防止过长的颜文字破坏布局 */
-    text-overflow: ellipsis; /* ★ 改变：过长时显示省略号 */
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
+.emoji-item:hover { border-color: #000080; background: #e0e0e0; }
 
-.emoji-item:hover {
-    border-color: #000080;
-    background: #e0e0e0;
+/* --- 聊天图片样式 --- */
+.chat-image {
+    max-width: 200px;
+    max-height: 150px;
+    border: 2px solid #808080;
+    background: #fff;
+    padding: 2px;
+    cursor: pointer;
+    display: block; /* 让图片独占一行，更美观 */
+    margin-top: 4px;
 }
+.chat-image:hover { border-color: #000080; }

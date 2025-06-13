@@ -55,16 +55,18 @@
                     <!-- 聊天消息会在这里生成 -->
                 </div>
 
-                <!-- ★ 新增：表情面板和工具栏 -->
                 <div class="toolbar">
                     <div id="emoji-panel" class="emoji-panel hidden">
                         <!-- 表情会由JS动态生成在这里 -->
                     </div>
-                    <button id="emoji-btn" class="toolbar-btn">😀</button>
+                    <button id="emoji-btn" class="toolbar-btn">(^o^)/</button>
+                    <!-- 图片上传按钮和隐藏的文件输入框 -->
+                    <button id="image-btn" class="toolbar-btn">🖼️</button>
+                    <input type="file" id="image-upload-input" accept="image/*" style="display: none;">
                 </div>
 
                 <div class="chat-input-area">
-                    <input id="input" autocomplete="off" placeholder="在这里输入消息..." />
+                    <input id="input" autocomplete="off" placeholder="在这里输入消息或粘贴图片..." />
                     <button id="send-btn">发送</button>
                 </div>
             </div>
