@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>糯米团 Chat (Win95 Edition)</title>
-    <!-- 引入一款像素字体，这是复古风格的灵魂 -->
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -55,6 +54,15 @@
                 <div id="messages">
                     <!-- 聊天消息会在这里生成 -->
                 </div>
+
+                <!-- ★ 新增：表情面板和工具栏 -->
+                <div class="toolbar">
+                    <div id="emoji-panel" class="emoji-panel hidden">
+                        <!-- 表情会由JS动态生成在这里 -->
+                    </div>
+                    <button id="emoji-btn" class="toolbar-btn">😀</button>
+                </div>
+
                 <div class="chat-input-area">
                     <input id="input" autocomplete="off" placeholder="在这里输入消息..." />
                     <button id="send-btn">发送</button>

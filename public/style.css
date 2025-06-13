@@ -157,9 +157,57 @@ button:active {
 #input { width: 100%; margin: 0; margin-right: 10px; }
 #send-btn { width: 80px; }
 
-/* --- 新增的时间戳样式 --- */
+/* 时间戳样式 */
 .timestamp {
-    color: #808080; /* 使用柔和的灰色 */
+    color: #808080;
     margin-right: 8px;
     font-size: 14px;
+}
+
+/* --- 新增：工具栏和表情面板样式 --- */
+.toolbar {
+    position: relative;
+    border-top: 2px solid #808080;
+    padding: 2px;
+}
+
+.toolbar-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    font-size: 20px;
+    line-height: 28px;
+}
+
+.emoji-panel {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    background: #c0c0c0;
+    border: 1px solid;
+    border-top-color: #ffffff;
+    border-left-color: #ffffff;
+    border-right-color: #000000;
+    border-bottom-color: #000000;
+    padding: 5px;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 5px;
+    box-shadow: 1px 1px 0 #000;
+}
+
+.emoji-panel.hidden {
+    display: none;
+}
+
+.emoji-item {
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.emoji-item:hover {
+    border-color: #000080;
+    background: #e0e0e0;
 }
