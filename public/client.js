@@ -38,21 +38,26 @@ document.addEventListener('DOMContentLoaded', () => {
     function addChatMessage(data) {
         const item = document.createElement('div');
 
-        // ★ 新增: 创建一个时间戳元素
         const timestampSpan = document.createElement('span');
         timestampSpan.className = 'timestamp';
-        // 将ISO格式的日期字符串转换为更易读的本地时间格式 (例如 "14:30")
         const date = new Date(data.created_at);
-        timestampSpan.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+
+        // ★ 使用手动拼接的方式来格式化日期和时间
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1; // getMonth() 是从0开始的，所以+1
+        const day = date.getDate();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+
+        timestampSpan.textContent = `${year}/${month}/${day} ${hours}:${minutes}`;
         
         const nicknameSpan = document.createElement('span');
         nicknameSpan.className = 'nickname';
         nicknameSpan.textContent = `<${data.nickname}>: `;
 
-        // ★ 改变: 调整添加元素的顺序
-        item.appendChild(timestampSpan); // 先加时间
-        item.appendChild(nicknameSpan); // 再加昵称
-        item.append(document.createTextNode(data.msg)); // 最后加消息内容
+        item.appendChild(timestampSpan);
+        item.appendChild(nicknameSpan);
+        item.append(document.createTextNode(data.msg));
         
         messages.appendChild(item);
         messages.scrollTop = messages.scrollHeight;
