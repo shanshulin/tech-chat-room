@@ -164,7 +164,7 @@ button:active {
     font-size: 14px;
 }
 
-/* --- 新增：工具栏和表情面板样式 --- */
+/* --- 工具栏和表情面板样式 --- */
 .toolbar {
     position: relative;
     border-top: 2px solid #808080;
@@ -172,10 +172,10 @@ button:active {
 }
 
 .toolbar-btn {
-    width: 28px;
+    width: auto; /* ★ 改变：让宽度自适应内容 */
     height: 28px;
-    padding: 0;
-    font-size: 20px;
+    padding: 0 8px; /* ★ 改变：增加左右内边距 */
+    font-size: 16px; /* ★ 改变：调整字体大小 */
     line-height: 28px;
 }
 
@@ -191,9 +191,11 @@ button:active {
     border-bottom-color: #000000;
     padding: 5px;
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); /* ★ 改变：响应式布局，自动填充 */
     gap: 5px;
     box-shadow: 1px 1px 0 #000;
+    width: 100%; /* ★ 改变：占满父容器宽度 */
+    box-sizing: border-box; /* ★ 改变：确保padding和border不影响总宽度 */
 }
 
 .emoji-panel.hidden {
@@ -201,10 +203,14 @@ button:active {
 }
 
 .emoji-item {
-    width: 32px;
-    height: 32px;
+    padding: 5px;
+    text-align: center;
     cursor: pointer;
     border: 1px solid transparent;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden; /* ★ 改变：防止过长的颜文字破坏布局 */
+    text-overflow: ellipsis; /* ★ 改变：过长时显示省略号 */
 }
 
 .emoji-item:hover {
