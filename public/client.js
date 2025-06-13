@@ -26,6 +26,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const imageBtn = document.getElementById('image-btn');
     const imageUploadInput = document.getElementById('image-upload-input');
 
+    // ★★★ 新增：获取模态框相关元素 ★★★
+    const imageModal = document.getElementById('image-modal');
+    const modalImg = document.getElementById('modal-img');
+    const closeBtn = document.querySelector('.close-btn');
+
     // --- 核心功能函数 ---
     function switchScreen(screenName) { Object.values(screens).forEach(screen => screen.classList.remove('active')); screens[screenName].classList.add('active'); }
     function sendMessage() { if (input.value && !input.disabled) { socket.emit('chat message', { type: 'text', msg: input.value }); input.value = ''; input.focus(); } }
@@ -35,7 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const item = document.createElement('div');
         const timestampSpan = document.createElement('span');
         timestampSpan.className = 'timestamp';
-        const date = new Date(data.created_at);
+        // 如果历史记录里有时间戳就用，实时消息则用当前时间
+        const date = new Date(data.created_at || Date.now()); 
         const year = date.getFullYear(); const month = date.getMonth() + 1; const day = date.getDate();
         const hours = String(date.getHours()).padStart(2, '0'); const minutes = String(date.getMinutes()).padStart(2, '0');
         timestampSpan.textContent = `${year}/${month}/${day} ${hours}:${minutes}`;
@@ -85,23 +91,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- 事件绑定 ---
-    imageBtn.addEventListener('click', () => imageUploadInput.click());
-    imageUploadInput.addEventListener('change', (event) => {
-        const file = event.target.files[0];
-        if (file) uploadImage(file);
-        event.target.value = '';
-    });
-    input.addEventListener('paste', (event) => {
-        const items = (event.clipboardData || window.clipboardData).items;
-        for (let i = 0; i < items.length; i++) {
-            if (items[i].type.indexOf('image') !== -1) {
-                event.preventDefault();
-                const blob = items[i].getAsFile();
-                if(blob) uploadImage(blob);
-                return;
-            }
+    // ★★★ 新增：图片点击和模态框关闭逻辑 ★★★
+    messages.addEventListener('click', (e) => {
+        if (e.target && e.target.classList.contains('chat-image')) {
+            imageModal.classList.add('active');
+            modalImg.src = e.target.src;
         }
     });
+    closeBtn.addEventListener('click', () => { imageModal.classList.remove('active'); });
+    imageModal.addEventListener('click', (e) => { if (e.target === imageModal) { imageModal.classList.remove('active'); } });
+    document.addEventListener('keydown', (e) => { if (e.key === "Escape" && imageModal.classList.contains('active')) { imageModal.classList.remove('active'); } });
+
+    // 你已有的事件绑定
+    imageBtn.addEventListener('click', () => imageUploadInput.click());
+    imageUploadInput.addEventListener('change', (event) => { const file = event.target.files[0]; if (file) uploadImage(file); event.target.value = ''; });
+    input.addEventListener('paste', (event) => { const items = (event.clipboardData || window.clipboardData).items; for (let i = 0; i < items.length; i++) { if (items[i].type.indexOf('image') !== -1) { event.preventDefault(); const blob = items[i].getAsFile(); if(blob) uploadImage(blob); return; } } });
     emojiBtn.addEventListener('click', (e) => { e.stopPropagation(); emojiPanel.classList.toggle('hidden'); });
     document.addEventListener('click', () => { if (!emojiPanel.classList.contains('hidden')) emojiPanel.classList.add('hidden'); });
     loginBtn.addEventListener('click', () => { if (passwordInput.value === 'MWNMT') { switchScreen('nickname'); } else { errorMsg.textContent = '错误: 密码不正确。'; setTimeout(() => { errorMsg.textContent = ''; }, 3000); } });
@@ -113,15 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 表情面板 ---
     emojiPanel.innerHTML = '';
-    for (const code in KAOMOJI_MAP) {
-        const kaomoji = KAOMOJI_MAP[code];
-        const panelItem = document.createElement('div');
-        panelItem.className = 'emoji-item';
-        panelItem.textContent = kaomoji;
-        panelItem.title = code;
-        panelItem.addEventListener('click', () => { input.value += ` ${code} `; input.focus(); emojiPanel.classList.add('hidden'); });
-        emojiPanel.appendChild(panelItem);
-    }
+    for (const code in KAOMOJI_MAP) { const kaomoji = KAOMOJI_MAP[code]; const panelItem = document.createElement('div'); panelItem.className = 'emoji-item'; panelItem.textContent = kaomoji; panelItem.title = code; panelItem.addEventListener('click', () => { input.value += ` ${code} `; input.focus(); emojiPanel.classList.add('hidden'); }); emojiPanel.appendChild(panelItem); }
 
     // --- Socket.IO 事件处理 ---
     socket.on('load history', (history) => { messages.innerHTML = ''; history.forEach(data => addChatMessage(data)); addSystemMessage('欢迎来到聊天室！'); });
