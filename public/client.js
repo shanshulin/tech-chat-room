@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const socket = io();
     let myNickname = '';
 
-    // ★ 定义我们的表情包和它们的Unicode字符
+    // 定义我们的表情包和它们的Unicode字符
     const EMOJI_MAP = {
         ':smile:': '😀',
         ':joy:': '😂',
@@ -26,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const messages = document.getElementById('messages');
     const usersList = document.querySelector('#users-list');
     const chatWindowTitle = document.querySelector('#chat-screen .title-bar-text');
-    // ★ 表情相关的DOM元素
     const emojiBtn = document.getElementById('emoji-btn');
     const emojiPanel = document.getElementById('emoji-panel');
 
@@ -36,11 +35,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function sendMessage() { if (input.value && !input.disabled) { socket.emit('chat message', input.value); input.value = ''; input.focus(); } }
     function addSystemMessage(msg) { const item = document.createElement('div'); item.classList.add('system-message'); item.textContent = `*** ${msg} ***`; messages.appendChild(item); messages.scrollTop = messages.scrollHeight; }
     
-
-    // ★ 升级 addChatMessage 函数来“翻译”表情代码
+    // ★ 使用 replace 方法重构的 addChatMessage 函数
     function addChatMessage(data) {
         const item = document.createElement('div');
 
+        // 创建并格式化时间戳
         const timestampSpan = document.createElement('span');
         timestampSpan.className = 'timestamp';
         const date = new Date(data.created_at);
@@ -51,30 +50,34 @@ document.addEventListener('DOMContentLoaded', () => {
         const minutes = String(date.getMinutes()).padStart(2, '0');
         timestampSpan.textContent = `${year}/${month}/${day} ${hours}:${minutes}`;
         
+        // 创建昵称
         const nicknameSpan = document.createElement('span');
         nicknameSpan.className = 'nickname';
         nicknameSpan.textContent = `<${data.nickname}>: `;
 
+        // 先将基础元素添加进去
         item.appendChild(timestampSpan);
         item.appendChild(nicknameSpan);
         
-        // --- 表情翻译魔法发生在这里 ---
-        const messageParts = data.msg.split(/(\s+)/); // 按空白符分割，并保留分隔符
-        messageParts.forEach(part => {
-            if (EMOJI_MAP[part]) {
-                const emojiImg = document.createElement('img');
-                const emojiUnicode = EMOJI_MAP[part];
-                emojiImg.src = `https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/72x72/${emojiUnicode.codePointAt(0).toString(16)}.png`;
-                emojiImg.alt = part;
-                emojiImg.style.width = '20px';
-                emojiImg.style.height = '20px';
-                emojiImg.style.verticalAlign = 'middle';
-                item.appendChild(emojiImg);
-            } else {
-                item.append(document.createTextNode(part));
-            }
-        });
-        
+        // --- ★ 全新的、更健壮的表情翻译魔法 ★ ---
+        // 1. 先将整段消息作为安全的文本节点添加，防止XSS攻击
+        const messageContent = document.createTextNode(data.msg);
+        item.appendChild(messageContent);
+
+        // 2. 在innerHTML上进行表情代码替换
+        let contentHTML = item.innerHTML;
+        for (const code in EMOJI_MAP) {
+            const emojiUnicode = EMOJI_MAP[code];
+            const emojiUrl = `https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/72x72/${emojiUnicode.codePointAt(0).toString(16)}.png`;
+            const imgTag = `<img src="${emojiUrl}" alt="${code}" style="width: 20px; height: 20px; vertical-align: middle;">`;
+            
+            // 为了安全地在正则中使用code，需要转义特殊字符
+            const escapedCode = code.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+            const regex = new RegExp(escapedCode, 'g');
+            contentHTML = contentHTML.replace(regex, imgTag);
+        }
+        item.innerHTML = contentHTML;
+
         messages.appendChild(item);
         messages.scrollTop = messages.scrollHeight;
     }
@@ -89,8 +92,15 @@ document.addEventListener('DOMContentLoaded', () => {
         img.className = 'emoji-item';
         img.title = code;
         img.addEventListener('click', () => {
-            input.value += ` ${code} `;
+            // 在光标处插入表情代码，而不是总在末尾
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            const text = input.value;
+            const before = text.substring(0, start);
+            const after = text.substring(end, text.length);
+            input.value = `${before} ${code} ${after}`;
             input.focus();
+            input.selectionStart = input.selectionEnd = start + code.length + 2; // +2 for spaces
             emojiPanel.classList.add('hidden');
         });
         emojiPanel.appendChild(img);
