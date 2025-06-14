@@ -30,58 +30,62 @@ body {
     margin: 0 auto;
 }
 
-/* ★★★ 核心修复：使用绝对定位和内边距的健壮方法 ★★★ */
+/* ★★★ 核心修复：最终方案 ★★★ */
 .title-bar {
     background: linear-gradient(to right, #000080, #1084d0);
     color: #ffffff;
-    /* 关键: 设置右侧内边距为75px，为按钮留出固定空间 */
-    padding: 3px 75px 3px 4px;
+    padding: 3px 80px 3px 4px; /* 为按钮留足空间 */
     font-weight: bold;
     text-shadow: 1px 1px #000000;
     height: 26px;
     box-sizing: border-box;
-
-    /* 关键: 为子元素的绝对定位建立参照系 */
     position: relative;
 }
 
 .title-bar-text {
-    /* 确保文本不会超出其分配的区域 */
-    display: block; /* 使其占据全部可用宽度 (减去内边距) */
+    display: block;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 20px; /* 模拟垂直居中 */
+    line-height: 20px;
     padding-left: 2px;
 }
 
 .title-bar-controls {
-    /* 关键: 将按钮容器绝对定位于右上角 */
-    position: absolute;
-    top: 3px;
-    right: 3px;
-    display: flex; /* 让内部的按钮可以横向排列 */
+    /* 使用 !important 强制设置定位 */
+    position: absolute !important;
+    top: 3px !important;
+    right: 3px !important;
+    display: flex !important;
 }
-/* ★★★ 核心修复结束 ★★★ */
 
 .button-control {
+    /* 使用 !important 强制重置所有可能出问题的属性 */
+    box-sizing: border-box !important;
+    width: 20px !important;
+    height: 20px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    margin-left: 2px !important;
+
+    /* 强制使用安全字体，这是最关键的一步 */
+    font-family: Arial, sans-serif !important;
+    font-size: 14px !important;
+    font-weight: bold !important;
+    line-height: 18px !important; /* 微调以保证符号垂直居中 */
+    text-align: center !important;
+    overflow: hidden !important; /* 隐藏任何超出部分的字体渲染 */
+
+    /* 保留外观样式 */
     background: #c0c0c0;
     border: 1px solid;
     border-top-color: #fff;
     border-left-color: #fff;
     border-right-color: #000;
     border-bottom-color: #000;
-    width: 20px;
-    height: 20px;
-    margin-left: 2px;
-    text-align: center;
-    line-height: 20px;
-    font-size: 14px;
-    font-weight: bold;
     cursor: pointer;
-    flex-shrink: 0;
-    font-family: sans-serif; /* ★★★ 关键修复：为按钮指定一个安全字体 ★★★ */
 }
+/* ★★★ 核心修复结束 ★★★ */
 
 .window-body {
     padding: 20px;
