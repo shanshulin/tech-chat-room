@@ -30,41 +30,37 @@ body {
     margin: 0 auto;
 }
 
-/* ★★★ 核心修复：使用Flexbox重构标题栏布局 ★★★ */
+/* ★★★ 核心修复：使用绝对定位和内边距的健壮方法 ★★★ */
 .title-bar {
     background: linear-gradient(to right, #000080, #1084d0);
     color: #ffffff;
-    padding: 3px 4px; /* 调整内边距 */
+    /* 关键: 设置右侧内边距为75px，为按钮留出固定空间 */
+    padding: 3px 75px 3px 4px;
     font-weight: bold;
     text-shadow: 1px 1px #000000;
     height: 26px;
     box-sizing: border-box;
 
-    /* 关键修复：应用Flexbox布局 */
-    display: flex;         /* 1. 将标题栏设为Flex容器 */
-    align-items: center;   /* 2. 让所有子元素（文本和按钮）在垂直方向上居中 */
-    gap: 4px;              /* 3. 在标题文本和按钮之间增加一点间距 */
+    /* 关键: 为子元素的绝对定位建立参照系 */
+    position: relative;
 }
 
 .title-bar-text {
-    /* 关键修复：让标题文本占据所有可用空间 */
-    flex-grow: 1;
-
-    /* 当文本过长时，防止其将按钮推出容器 */
+    /* 确保文本不会超出其分配的区域 */
+    display: block; /* 使其占据全部可用宽度 (减去内边距) */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 20px;
+    line-height: 20px; /* 模拟垂直居中 */
     padding-left: 2px;
 }
 
 .title-bar-controls {
-    /* 关键修复：确保按钮容器不会被挤压变形 */
-    flex-shrink: 0;
-
-    /* 不再需要绝对定位，恢复其在文档流中的位置 */
-    position: static;
-    display: flex;
+    /* 关键: 将按钮容器绝对定位于右上角 */
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    display: flex; /* 让内部的按钮可以横向排列 */
 }
 /* ★★★ 核心修复结束 ★★★ */
 
@@ -83,7 +79,7 @@ body {
     font-size: 14px;
     font-weight: bold;
     cursor: pointer;
-    flex-shrink: 0; /* 确保按钮本身也不会被压缩 */
+    flex-shrink: 0;
 }
 
 .window-body {
