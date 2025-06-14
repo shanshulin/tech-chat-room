@@ -30,21 +30,27 @@ body {
     margin: 0 auto;
 }
 
-/* ★★★ 核心修复：重构标题栏布局方式 ★★★ */
+/* ★★★ 核心修复：使用Flexbox重构标题栏布局 ★★★ */
 .title-bar {
     background: linear-gradient(to right, #000080, #1084d0);
     color: #ffffff;
-    padding: 3px 2px 3px 4px;
-    align-items: center;
+    padding: 3px 4px; /* 调整内边距 */
     font-weight: bold;
     text-shadow: 1px 1px #000000;
-    position: relative; /* 必须保留，为绝对定位提供参照 */
     height: 26px;
     box-sizing: border-box;
+
+    /* 关键修复：应用Flexbox布局 */
+    display: flex;         /* 1. 将标题栏设为Flex容器 */
+    align-items: center;   /* 2. 让所有子元素（文本和按钮）在垂直方向上居中 */
+    gap: 4px;              /* 3. 在标题文本和按钮之间增加一点间距 */
 }
 
 .title-bar-text {
-    display: inline-block;
+    /* 关键修复：让标题文本占据所有可用空间 */
+    flex-grow: 1;
+
+    /* 当文本过长时，防止其将按钮推出容器 */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -53,9 +59,11 @@ body {
 }
 
 .title-bar-controls {
-    position: absolute;
-    top: 3px;
-    right: 3px;
+    /* 关键修复：确保按钮容器不会被挤压变形 */
+    flex-shrink: 0;
+
+    /* 不再需要绝对定位，恢复其在文档流中的位置 */
+    position: static;
     display: flex;
 }
 /* ★★★ 核心修复结束 ★★★ */
