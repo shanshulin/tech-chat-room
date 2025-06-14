@@ -1,5 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const socket = io();
+    // ▼▼▼ 核心修改：优化 Socket.IO 的重连策略 ▼▼▼
+    const socket = io({
+        reconnection: true,             // 确保自动重连开启
+        reconnectionDelay: 1000,        // 首次重连前等待1秒
+        reconnectionDelayMax: 5000,     // 每次重连尝试之间的最长等待时间为5秒
+        reconnectionAttempts: Infinity  // 永不放弃重连
+    });
+    // ▲▲▲ 修改结束 ▲▲▲
+
     let myNickname = '';
 
     const KAOMOJI_MAP = { ':happy:': '(^▽^)', ':lol:': 'o(>▽<)o', ':love:': '(｡♥‿♥｡)', ':excited:': '(*^▽^*)', ':proud:': '(´_ゝ`)', ':sad:': '(T_T)', ':cry:': '(；′⌒`)', ':sob:': '༼ಢ_ಢ༽', ':wow:': 'Σ(°ロ°)', ':speechless:': '(－_－) zzZ', ':confused:': '(°_°)?', ':wave:': '(^_^)/', ':ok:': 'd(^_^o)', ':sorry:': 'm(_ _)m', ':run:': 'ε=ε=┌( >_<)┘', ':tableflip:': '(╯°□°）╯︵ ┻━┻', ':cat:': '(=^ェ^=)', ':bear:': 'ʕ •ᴥ•ʔ', ':note:': 'ヾ( ´ A ` )ﾉ', ':sleepy:': '(´-ω-`)' };
@@ -26,14 +34,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchBtn = document.getElementById('search-btn');
     const searchWindow = document.getElementById('search-window');
     const searchCloseBtn = document.getElementById('search-close-btn');
+    const searchUsername = document.getElementById('search-username');
     const searchKeyword = document.getElementById('search-keyword');
     const searchYear = document.getElementById('search-year');
     const searchMonth = document.getElementById('search-month');
     const searchDay = document.getElementById('search-day');
     const executeSearchBtn = document.getElementById('execute-search-btn');
     const searchResults = document.getElementById('search-results');
-    // ▼▼▼ 新增对用户名字段的引用 ▼▼▼
-    const searchUsername = document.getElementById('search-username');
 
     // --- 核心功能函数 ---
     function switchScreen(screenName) { Object.values(screens).forEach(screen => screen.classList.remove('active')); screens[screenName].classList.add('active'); }
@@ -94,7 +101,6 @@ document.addEventListener('DOMContentLoaded', () => {
     searchBtn.addEventListener('click', () => { searchWindow.classList.add('active'); });
     searchCloseBtn.addEventListener('click', () => { searchWindow.classList.remove('active'); });
     executeSearchBtn.addEventListener('click', async () => {
-        // ▼▼▼ 修改：增加 username 到查询参数中 ▼▼▼
         const queryParams = new URLSearchParams({
             username: searchUsername.value.trim(),
             keyword: searchKeyword.value.trim(),
@@ -102,7 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
             month: searchMonth.value,
             day: searchDay.value
         });
-        // ▲▲▲ 修改结束 ▲▲▲
         searchResults.innerHTML = '正在查询中...';
         try {
             const response = await fetch(`/api/search?${queryParams.toString()}`);
@@ -124,5 +129,14 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('system message', (msg) => addSystemMessage(msg));
     socket.on('update users', (users) => { usersList.innerHTML = ''; users.forEach(user => { const item = document.createElement('li'); item.textContent = user; usersList.appendChild(item); }); });
     socket.on('disconnect', () => { addSystemMessage('您已断开连接，正在尝试重连...'); chatWindowTitle.textContent = '糯米团 v1.0 - 正在重新连接...'; input.disabled = true; sendBtn.disabled = true; });
-    socket.on('connect', () => { if (myNickname) { chatWindowTitle.textContent = '糯米团 v1.0 - 在线聊天室'; input.disabled = false; sendBtn.disabled = false; socket.emit('join', myNickname); } });
+    
+    // 这个事件现在可以更可靠地被触发了
+    socket.on('connect', () => { 
+        if (myNickname) { 
+            chatWindowTitle.textContent = '糯米团 v1.0 - 在线聊天室'; 
+            input.disabled = false; 
+            sendBtn.disabled = false; 
+            socket.emit('join', myNickname); 
+        } 
+    });
 });
