@@ -80,6 +80,7 @@ body {
     font-weight: bold;
     cursor: pointer;
     flex-shrink: 0;
+    font-family: sans-serif; /* ★★★ 关键修复：为按钮指定一个安全字体 ★★★ */
 }
 
 .window-body {
