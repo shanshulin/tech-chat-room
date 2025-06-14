@@ -39,7 +39,7 @@ body {
     align-items: center;
     font-weight: bold;
     text-shadow: 1px 1px #000000;
-    position: relative; /* 核心修复：为子元素的绝对定位提供参照物 */
+    position: relative; /* 为子元素的绝对定位提供参照物 */
 }
 
 .title-bar-controls {
