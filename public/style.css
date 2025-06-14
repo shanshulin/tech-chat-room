@@ -33,18 +33,31 @@ body {
 .title-bar {
     background: linear-gradient(to right, #000080, #1084d0);
     color: #ffffff;
-    padding: 4px 6px;
+    padding: 3px 2px 3px 4px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
     font-weight: bold;
     text-shadow: 1px 1px #000000;
-    position: relative; /* 为子元素的绝对定位提供参照物 */
+    position: relative; /* 为绝对定位提供参照 */
+}
+
+/* ★★★ 核心修复开始 ★★★ */
+.title-bar-text {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 50px; /* 为右侧按钮留出空间 */
 }
 
 .title-bar-controls {
+    position: absolute;
+    top: 3px;
+    right: 3px;
     display: flex;
 }
+/* ★★★ 核心修复结束 ★★★ */
+
 
 .button-control {
     background: #c0c0c0;
@@ -55,12 +68,13 @@ body {
     border-bottom-color: #000;
     width: 20px;
     height: 20px;
-    margin-left: 3px;
+    margin-left: 2px;
     text-align: center;
     line-height: 20px;
     font-size: 14px;
     font-weight: bold;
     cursor: pointer;
+    flex-shrink: 0;
 }
 
 .window-body {

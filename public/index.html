@@ -11,7 +11,13 @@
 
     <!-- 登录窗口 -->
     <div id="login-screen" class="window screen active">
-        <div class="title-bar"><div class="title-bar-text">糯米团 - 用户登录</div><div class="title-bar-controls"><div class="button-control">?</div><div class="button-control">X</div></div></div>
+        <div class="title-bar">
+            <span class="title-bar-text">糯米团 - 用户登录</span>
+            <div class="title-bar-controls">
+                <button class="button-control">?</button>
+                <button class="button-control">X</button>
+            </div>
+        </div>
         <div class="window-body">
             <h1>欢迎回家 糯米团 Chat</h1><p>请输入登录密码:</p><input type="password" id="password-input"><button id="login-btn">确定</button><p id="error-msg" class="error"></p>
         </div>
@@ -19,7 +25,12 @@
 
     <!-- 昵称设置窗口 -->
     <div id="nickname-screen" class="window screen">
-         <div class="title-bar"><div class="title-bar-text">创建用户</div></div>
+         <div class="title-bar">
+            <span class="title-bar-text">创建用户</span>
+            <div class="title-bar-controls">
+                <button class="button-control">X</button>
+            </div>
+        </div>
         <div class="window-body">
             <h1>设置您的身份</h1><p>请输入一个昵称:</p><input type="text" id="nickname-input"><button id="nickname-btn">进入聊天</button>
         </div>
@@ -27,7 +38,14 @@
 
     <!-- 聊天室主窗口 -->
     <div id="chat-screen" class="chat-window window screen">
-        <div class="title-bar"><div class="title-bar-text">糯米团 v1.0 - 在线聊天室</div></div>
+        <div class="title-bar">
+            <span class="title-bar-text">糯米团 v1.0 - 在线聊天室</span>
+            <div class="title-bar-controls">
+                <button class="button-control">_</button>
+                <button class="button-control">❐</button>
+                <button class="button-control">X</button>
+            </div>
+        </div>
         <div class="chat-container">
             <div id="users-list-container"><p>在线用户:</p><ul id="users-list"></ul></div>
             <div class="chat-main">
@@ -53,7 +71,12 @@
 
     <!-- 聊天记录查询窗口 -->
     <div id="search-window" class="window screen">
-        <div class="title-bar"><div class="title-bar-text">查找聊天记录</div><div class="title-bar-controls"><button class="button-control" id="search-close-btn">X</button></div></div>
+        <div class="title-bar">
+            <span class="title-bar-text">查找聊天记录</span>
+            <div class="title-bar-controls">
+                <button class="button-control" id="search-close-btn">X</button>
+            </div>
+        </div>
         <div class="search-window-body">
             <div class="search-controls">
                 <div class="control-group"><label for="search-keyword">关键字:</label><input type="text" id="search-keyword"></div>
