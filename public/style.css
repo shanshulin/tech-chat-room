@@ -30,34 +30,29 @@ body {
     margin: 0 auto;
 }
 
+/* ★★★ 核心修复：恢复通用标题栏样式 ★★★ */
 .title-bar {
     background: linear-gradient(to right, #000080, #1084d0);
     color: #ffffff;
-    padding: 3px 2px 3px 4px;
+    padding: 3px 4px;
     display: flex;
+    justify-content: space-between; /* 恢复默认，让元素两端对齐 */
     align-items: center;
     font-weight: bold;
     text-shadow: 1px 1px #000000;
-    position: relative; /* 为绝对定位提供参照 */
+    position: relative; /* 为子元素的绝对定位提供参照 */
 }
 
-/* ★★★ 核心修复开始 ★★★ */
 .title-bar-text {
-    flex-grow: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding-right: 50px; /* 为右侧按钮留出空间 */
 }
 
 .title-bar-controls {
-    position: absolute;
-    top: 3px;
-    right: 3px;
-    display: flex;
+    display: flex; /* 默认使用 flex 布局排列按钮 */
+    flex-shrink: 0; /* 防止按钮组被压缩 */
 }
-/* ★★★ 核心修复结束 ★★★ */
-
 
 .button-control {
     background: #c0c0c0;
@@ -74,7 +69,6 @@ body {
     font-size: 14px;
     font-weight: bold;
     cursor: pointer;
-    flex-shrink: 0;
 }
 
 .window-body {
@@ -380,6 +374,15 @@ button:active {
     width: 90%;
     max-width: 600px;
 }
+
+/* ★★★ 核心修复：为特定窗口的按钮组应用绝对定位 ★★★ */
+#search-window .title-bar-controls {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+}
+/* ★★★ 核心修复结束 ★★★ */
+
 
 .search-window-body {
     padding: 10px;
