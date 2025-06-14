@@ -1,5 +1,3 @@
-// --- 修复后的 server.js ---
-
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -65,14 +63,21 @@ async function main() {
     }
   });
 
+  // 聊天记录搜索 API
   app.get('/api/search', async (req, res) => {
     try {
-        const { keyword, year, month, day } = req.query;
+        // ▼▼▼ 修改：接收 username 参数并加入查询逻辑 ▼▼▼
+        const { username, keyword, year, month, day } = req.query;
         let query = 'SELECT nickname, content, message_type, created_at FROM messages';
         const conditions = [];
         const values = [];
         let valueIndex = 1;
 
+        if (username) {
+            conditions.push(`nickname ILIKE $${valueIndex++}`);
+            values.push(`%${username}%`);
+        }
+        
         if (keyword) {
             conditions.push(`content ILIKE $${valueIndex++}`);
             values.push(`%${keyword}%`);
@@ -89,6 +94,7 @@ async function main() {
             conditions.push(`EXTRACT(DAY FROM created_at) = $${valueIndex++}`);
             values.push(day);
         }
+        // ▲▲▲ 修改结束 ▲▲▲
 
         if (conditions.length > 0) {
             query += ' WHERE ' + conditions.join(' AND ');
@@ -120,21 +126,17 @@ async function main() {
       socket.emit('load history', result.rows.reverse());
     } catch (err) { console.error('读取历史消息失败:', err); }
     
-    // ★★★ 核心修复 #1：补全用户加入逻辑 ★★★
     socket.on('join', (nickname) => {
         if (nickname) {
             socket.nickname = nickname;
             users[socket.id] = nickname;
-            // 向所有客户端广播更新后的用户列表
             io.emit('update users', Object.values(users));
-            // 向除了当前用户外的其他所有用户发送系统消息
             socket.broadcast.emit('system message', `“${nickname}”加入了聊天室`);
             console.log(`“${nickname}”加入，当前在线用户:`, Object.values(users));
         }
     });
     
     socket.on('chat message', async (data) => {
-      // 这个判断现在可以正常工作了
       if (socket.nickname) {
         try {
           const result = await pool.query('INSERT INTO messages (nickname, content, message_type) VALUES ($1, $2, $3) RETURNING created_at', [socket.nickname, data.msg, data.type]);
@@ -143,13 +145,10 @@ async function main() {
       }
     });
 
-    // ★★★ 核心修复 #2：补全用户断开连接逻辑 ★★★
     socket.on('disconnect', () => {
         if (socket.nickname) {
             console.log(`“${socket.nickname}”断开了连接`);
-            // 从用户列表中移除
             delete users[socket.id];
-            // 向所有客户端广播更新后的用户列表和系统消息
             io.emit('update users', Object.values(users));
             io.emit('system message', `“${socket.nickname}”离开了聊天室`);
         } else {

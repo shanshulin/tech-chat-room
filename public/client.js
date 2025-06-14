@@ -32,6 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchDay = document.getElementById('search-day');
     const executeSearchBtn = document.getElementById('execute-search-btn');
     const searchResults = document.getElementById('search-results');
+    // ▼▼▼ 新增对用户名字段的引用 ▼▼▼
+    const searchUsername = document.getElementById('search-username');
 
     // --- 核心功能函数 ---
     function switchScreen(screenName) { Object.values(screens).forEach(screen => screen.classList.remove('active')); screens[screenName].classList.add('active'); }
@@ -50,7 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
         nicknameSpan.textContent = `<${data.nickname}>: `;
         const contentSpan = document.createElement('span');
         
-        // ★★★ 核心修复：增加安全校验，确保 data.msg 不是 undefined ★★★
         const messageContent = data.msg || '';
 
         if (data.message_type === 'image') {
@@ -93,7 +94,15 @@ document.addEventListener('DOMContentLoaded', () => {
     searchBtn.addEventListener('click', () => { searchWindow.classList.add('active'); });
     searchCloseBtn.addEventListener('click', () => { searchWindow.classList.remove('active'); });
     executeSearchBtn.addEventListener('click', async () => {
-        const queryParams = new URLSearchParams({ keyword: searchKeyword.value.trim(), year: searchYear.value, month: searchMonth.value, day: searchDay.value });
+        // ▼▼▼ 修改：增加 username 到查询参数中 ▼▼▼
+        const queryParams = new URLSearchParams({
+            username: searchUsername.value.trim(),
+            keyword: searchKeyword.value.trim(),
+            year: searchYear.value,
+            month: searchMonth.value,
+            day: searchDay.value
+        });
+        // ▲▲▲ 修改结束 ▲▲▲
         searchResults.innerHTML = '正在查询中...';
         try {
             const response = await fetch(`/api/search?${queryParams.toString()}`);
