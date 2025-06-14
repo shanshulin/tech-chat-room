@@ -64,7 +64,7 @@ async function main() {
     }
   });
 
-  // ★★★ 新增：聊天记录搜索 API ★★★
+  // 聊天记录搜索 API
   app.get('/api/search', async (req, res) => {
     try {
         const { keyword, year, month, day } = req.query;
@@ -96,7 +96,17 @@ async function main() {
         query += ' ORDER BY created_at DESC LIMIT 100';
 
         const { rows } = await pool.query(query, values);
-        res.json(rows);
+        
+        // ★★★ 核心修复：格式化数据，统一字段名为 msg ★★★
+        const formattedRows = rows.map(row => ({
+            nickname: row.nickname,
+            msg: row.content, // 将 content 重命名为 msg
+            message_type: row.message_type,
+            created_at: row.created_at
+        }));
+        
+        res.json(formattedRows);
+
     } catch (err) {
         console.error('搜索聊天记录失败:', err);
         res.status(500).json({ error: '服务器内部错误' });
