@@ -1,3 +1,5 @@
+// --- 修复后的 server.js ---
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -46,7 +48,6 @@ async function main() {
   app.use(express.static('public'));
   app.get('/', (req, res) => { res.sendFile(__dirname + '/public/index.html'); });
 
-  // 你的图片上传路由 (保持不变)
   app.post('/upload', upload.single('image'), async (req, res) => {
     if (!req.file) return res.status(400).send('No file uploaded.');
     try {
@@ -64,7 +65,6 @@ async function main() {
     }
   });
 
-  // 聊天记录搜索 API
   app.get('/api/search', async (req, res) => {
     try {
         const { keyword, year, month, day } = req.query;
@@ -97,10 +97,9 @@ async function main() {
 
         const { rows } = await pool.query(query, values);
         
-        // ★★★ 核心修复：格式化数据，统一字段名为 msg ★★★
         const formattedRows = rows.map(row => ({
             nickname: row.nickname,
-            msg: row.content, // 将 content 重命名为 msg
+            msg: row.content,
             message_type: row.message_type,
             created_at: row.created_at
         }));
@@ -121,9 +120,21 @@ async function main() {
       socket.emit('load history', result.rows.reverse());
     } catch (err) { console.error('读取历史消息失败:', err); }
     
-    socket.on('join', (nickname) => { /* ... 保持不变 ... */ });
+    // ★★★ 核心修复 #1：补全用户加入逻辑 ★★★
+    socket.on('join', (nickname) => {
+        if (nickname) {
+            socket.nickname = nickname;
+            users[socket.id] = nickname;
+            // 向所有客户端广播更新后的用户列表
+            io.emit('update users', Object.values(users));
+            // 向除了当前用户外的其他所有用户发送系统消息
+            socket.broadcast.emit('system message', `“${nickname}”加入了聊天室`);
+            console.log(`“${nickname}”加入，当前在线用户:`, Object.values(users));
+        }
+    });
     
     socket.on('chat message', async (data) => {
+      // 这个判断现在可以正常工作了
       if (socket.nickname) {
         try {
           const result = await pool.query('INSERT INTO messages (nickname, content, message_type) VALUES ($1, $2, $3) RETURNING created_at', [socket.nickname, data.msg, data.type]);
@@ -132,7 +143,19 @@ async function main() {
       }
     });
 
-    socket.on('disconnect', () => { /* ... 保持不变 ... */ });
+    // ★★★ 核心修复 #2：补全用户断开连接逻辑 ★★★
+    socket.on('disconnect', () => {
+        if (socket.nickname) {
+            console.log(`“${socket.nickname}”断开了连接`);
+            // 从用户列表中移除
+            delete users[socket.id];
+            // 向所有客户端广播更新后的用户列表和系统消息
+            io.emit('update users', Object.values(users));
+            io.emit('system message', `“${socket.nickname}”离开了聊天室`);
+        } else {
+            console.log('一个未命名用户断开了连接 id:', socket.id);
+        }
+    });
   });
 
   const PORT = process.env.PORT || 3000;
