@@ -1,12 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // ▼▼▼ 核心修改：优化 Socket.IO 的重连策略 ▼▼▼
+    // ▼▼▼ 新增：桌面元素和时钟 ▼▼▼
+    const chatAppIcon = document.getElementById('chat-app-icon');
+    const clockElement = document.getElementById('clock');
+    // ▲▲▲ 新增结束 ▲▲▲
+
     const socket = io({
-        reconnection: true,             // 确保自动重连开启
-        reconnectionDelay: 1000,        // 首次重连前等待1秒
-        reconnectionDelayMax: 5000,     // 每次重连尝试之间的最长等待时间为5秒
-        reconnectionAttempts: Infinity  // 永不放弃重连
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: Infinity
     });
-    // ▲▲▲ 修改结束 ▲▲▲
 
     let myNickname = '';
 
@@ -81,8 +84,26 @@ document.addEventListener('DOMContentLoaded', () => {
     function addChatMessage(data) { const item = createChatMessageElement(data); messages.appendChild(item); messages.scrollTop = messages.scrollHeight; }
     async function uploadImage(file) { if (!file || !file.type.startsWith('image/')) return; addSystemMessage(`正在上传图片: ${file.name || 'clipboard_image.png'}...`); const formData = new FormData(); formData.append('image', file); try { const response = await fetch('/upload', { method: 'POST', body: formData }); if (!response.ok) throw new Error('上传失败'); const result = await response.json(); socket.emit('chat message', { type: 'image', msg: result.imageUrl }); } catch (error) { console.error('上传出错:', error); addSystemMessage(`图片上传失败。`); } }
     function populateDateSelectors() { const currentYear = new Date().getFullYear(); searchYear.innerHTML = '<option value="any">所有年份</option>'; for (let y = currentYear; y >= 2023; y--) { searchYear.innerHTML += `<option value="${y}">${y}年</option>`; } searchMonth.innerHTML = '<option value="any">所有月份</option>'; for (let m = 1; m <= 12; m++) { searchMonth.innerHTML += `<option value="${m}">${m}月</option>`; } searchDay.innerHTML = '<option value="any">所有日期</option>'; for (let d = 1; d <= 31; d++) { searchDay.innerHTML += `<option value="${d}">${d}日</option>`; } }
+    
+    // ▼▼▼ 新增：时钟更新函数 ▼▼▼
+    function updateClock() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        clockElement.textContent = `${hours}:${minutes}`;
+    }
+    // ▲▲▲ 新增结束 ▲▲▲
 
     // --- 事件绑定 ---
+    // ▼▼▼ 新增：点击桌面图标启动应用 ▼▼▼
+    chatAppIcon.addEventListener('click', () => {
+        // 如果聊天窗口已经打开，就不再显示登录窗口
+        if (!screens.chat.classList.contains('active')) {
+             switchScreen('login');
+        }
+    });
+    // ▲▲▲ 新增结束 ▲▲▲
+
     messages.addEventListener('click', (e) => { if (e.target && e.target.classList.contains('chat-image')) { imageModal.classList.add('active'); modalImg.src = e.target.src; } });
     closeBtn.addEventListener('click', () => { imageModal.classList.remove('active'); });
     imageModal.addEventListener('click', (e) => { if (e.target === imageModal) { imageModal.classList.remove('active'); } });
@@ -122,6 +143,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 初始化 ---
     populateDateSelectors();
     for (const code in KAOMOJI_MAP) { const kaomoji = KAOMOJI_MAP[code]; const panelItem = document.createElement('div'); panelItem.className = 'emoji-item'; panelItem.textContent = kaomoji; panelItem.title = code; panelItem.addEventListener('click', () => { input.value += ` ${code} `; input.focus(); emojiPanel.classList.add('hidden'); }); emojiPanel.appendChild(panelItem); }
+    
+    // ▼▼▼ 新增：启动时钟 ▼▼▼
+    updateClock();
+    setInterval(updateClock, 1000 * 30); // 每30秒更新一次时钟即可，无需太频繁
+    // ▲▲▲ 新增结束 ▲▲▲
 
     // --- Socket.IO 事件处理 ---
     socket.on('load history', (history) => { messages.innerHTML = ''; history.forEach(data => addChatMessage(data)); addSystemMessage('欢迎来到聊天室！'); });
@@ -130,7 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('update users', (users) => { usersList.innerHTML = ''; users.forEach(user => { const item = document.createElement('li'); item.textContent = user; usersList.appendChild(item); }); });
     socket.on('disconnect', () => { addSystemMessage('您已断开连接，正在尝试重连...'); chatWindowTitle.textContent = '糯米团 v1.0 - 正在重新连接...'; input.disabled = true; sendBtn.disabled = true; });
     
-    // 这个事件现在可以更可靠地被触发了
     socket.on('connect', () => { 
         if (myNickname) { 
             chatWindowTitle.textContent = '糯米团 v1.0 - 在线聊天室'; 

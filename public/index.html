@@ -3,97 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>糯米团 Chat (Win95 Edition)</title>
+    <title>糯米团 Chat (Win95 Desktop)</title>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- 登录窗口 -->
-    <div id="login-screen" class="window screen active">
-        <div class="title-bar">
-            <span class="title-bar-text">糯米团 - 用户登录</span>
-            <div class="title-bar-controls">
-                <button class="button-control">?</button>
-                <button class="button-control">X</button>
-            </div>
+    <!-- ▼▼▼ 新增：桌面容器 ▼▼▼ -->
+    <div id="desktop">
+        <!-- 桌面图标 -->
+        <div id="chat-app-icon" class="desktop-icon">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHySURBVFhH7ZfRSwJRGMZ/d1d3Yy95lBDyEB5Eeuhf8AlC9LAHyUM2UhDSWz1sCBu6JFuCbYy2tDG1+f/f7MxwZneGnfaB9/PgzDs7O+/zPO8dcllW/y/hA34AJsADeANOgDlwA+YV4Q2s4Ac8wAL8L3wGzIAL8D7wBmxrwr+BR+AHPAc34F/gCrwD78AEuFAT/gfcB+vwOvgE3gP7wFnhAfx/gR2YV4RvwBfwtvAtcAG+AHeA8fAS3gI3oDNh/QF+AW+BN/AIbAAL8BocA+vA/4APwA04D07CK3APfAAj0ZgW/gYcBSdhHfgDPAALsA2cR2fgA5gGnsFR4Qb8ALyAZ+AFaFX4AfgG3gEzwA64rgjfAJfBfWATuAJOc9514GfgsfA5sApsgS3gDThf8A1sAwfBfPAZ+DzwDbwEToF1YDkwD2wD0+A8WArGg1HgHtiuwqfwEfgLfFdhUuA5OBtshd+AecLp4XzweTgf3AaWgfNgHdgGToGfAw+BP+A8OA0swVEgD7wD5oHVgpfA5xX+f4kYgA3wA0wDk/BUsADsBX/gG9gOToPBYBTYDtbBE3AW2AfOgI+LgDlwPY4C94F94CwwDzyCB/BsFVgDNoE54BU4UOC5EDgP/gSmgTNgHdiugt/AvxV8wMLfgYvAfeBH4WvgDbgGLgHPgS+B3wOvwGfgZ+B/4AFwGrgCPgV+Bf4bXgO/B/4A78DvoT+f/wPj3wM/pv8DkNl/BR4K/hF/Ad+GPwKfwg/hp8BX4dM5+CvwEfhL/Ch+B74A/p7/AfwG/BG5X5X/Af6X/gA5LCg7D5kG3AAAAABJRU5ErkJggg==" alt="Chat Icon">
+            <span>糯米团 Chat.exe</span>
         </div>
-        <div class="window-body">
-            <h1>欢迎回家 糯米团 Chat</h1><p>请输入登录密码:</p><input type="password" id="password-input"><button id="login-btn">确定</button><p id="error-msg" class="error"></p>
-        </div>
-    </div>
+        <!-- ▲▲▲ 新增结束 ▲▲▲ -->
 
-    <!-- 昵称设置窗口 -->
-    <div id="nickname-screen" class="window screen">
-         <div class="title-bar">
-            <span class="title-bar-text">创建用户</span>
-            <div class="title-bar-controls">
-                <button class="button-control">X</button>
-            </div>
-        </div>
-        <div class="window-body">
-            <h1>设置您的身份</h1><p>请输入一个昵称:</p><input type="text" id="nickname-input"><button id="nickname-btn">进入聊天</button>
-        </div>
-    </div>
-
-    <!-- 聊天室主窗口 -->
-    <div id="chat-screen" class="chat-window window screen">
-        <div class="title-bar">
-            <span class="title-bar-text">糯米团 v1.0 - 在线聊天室</span>
-            <div class="title-bar-controls">
-                <button class="button-control">_</button>
-                <button class="button-control">❐</button>
-                <button class="button-control">X</button>
-            </div>
-        </div>
-        <div class="chat-container">
-            <div id="users-list-container"><p>在线用户:</p><ul id="users-list"></ul></div>
-            <div class="chat-main">
-                <div id="messages"></div>
-                <div class="toolbar">
-                    <div id="emoji-panel" class="emoji-panel hidden"></div>
-                    <button id="emoji-btn" class="toolbar-btn">(^o^)/</button>
-                    <button id="image-btn" class="toolbar-btn">🖼️</button>
-                    <input type="file" id="image-upload-input" accept="image/*" style="display: none;">
-                    <button id="search-btn" class="toolbar-btn">🔍</button>
-                </div>
-                <div class="chat-input-area">
-                    <input id="input" autocomplete="off" placeholder="在这里输入消息或粘贴图片..." /><button id="send-btn">发送</button>
+        <!-- 登录窗口 -->
+        <div id="login-screen" class="window screen">
+            <div class="title-bar">
+                <span class="title-bar-text">糯米团 - 用户登录</span>
+                <div class="title-bar-controls">
+                    <button class="button-control">?</button>
+                    <button class="button-control">X</button>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- 图片放大查看器 (模态框) -->
-    <div id="image-modal" class="modal">
-        <span class="close-btn">×</span><img class="modal-content" id="modal-img">
-    </div>
-
-    <!-- 聊天记录查询窗口 -->
-    <div id="search-window" class="window screen">
-        <div class="title-bar">
-            <span class="title-bar-text">查找聊天记录</span>
-            <div class="title-bar-controls">
-                <button class="button-control" id="search-close-btn">X</button>
+            <div class="window-body">
+                <h1>欢迎回家 糯米团 Chat</h1><p>请输入登录密码:</p><input type="password" id="password-input"><button id="login-btn">确定</button><p id="error-msg" class="error"></p>
             </div>
         </div>
-        <div class="search-window-body">
-            <div class="search-controls">
-                <!-- ▼▼▼ 新增的用户名字段 ▼▼▼ -->
-                <div class="control-group">
-                    <label for="search-username">用户名:</label>
-                    <input type="text" id="search-username">
+
+        <!-- 昵称设置窗口 -->
+        <div id="nickname-screen" class="window screen">
+             <div class="title-bar">
+                <span class="title-bar-text">创建用户</span>
+                <div class="title-bar-controls">
+                    <button class="button-control">X</button>
                 </div>
-                <!-- ▲▲▲ 新增结束 ▲▲▲ -->
-                <div class="control-group"><label for="search-keyword">关键字:</label><input type="text" id="search-keyword"></div>
-                <div class="control-group">
-                    <label>日期:</label><select id="search-year"></select><select id="search-month"></select><select id="search-day"></select>
-                </div>
-                <button id="execute-search-btn">开始查找</button>
             </div>
-            <div class="search-results-container"><div id="search-results"></div></div>
+            <div class="window-body">
+                <h1>设置您的身份</h1><p>请输入一个昵称:</p><input type="text" id="nickname-input"><button id="nickname-btn">进入聊天</button>
+            </div>
+        </div>
+
+        <!-- 聊天室主窗口 -->
+        <div id="chat-screen" class="chat-window window screen">
+            <div class="title-bar">
+                <span class="title-bar-text">糯米团 v1.0 - 在线聊天室</span>
+                <div class="title-bar-controls">
+                    <button class="button-control">_</button>
+                    <button class="button-control">❐</button>
+                    <button class="button-control">X</button>
+                </div>
+            </div>
+            <div class="chat-container">
+                <div id="users-list-container"><p>在线用户:</p><ul id="users-list"></ul></div>
+                <div class="chat-main">
+                    <div id="messages"></div>
+                    <div class="toolbar">
+                        <div id="emoji-panel" class="emoji-panel hidden"></div>
+                        <button id="emoji-btn" class="toolbar-btn">(^o^)/</button>
+                        <button id="image-btn" class="toolbar-btn">🖼️</button>
+                        <input type="file" id="image-upload-input" accept="image/*" style="display: none;">
+                        <button id="search-btn" class="toolbar-btn">🔍</button>
+                    </div>
+                    <div class="chat-input-area">
+                        <input id="input" autocomplete="off" placeholder="在这里输入消息或粘贴图片..." /><button id="send-btn">发送</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图片放大查看器 (模态框) -->
+        <div id="image-modal" class="modal">
+            <span class="close-btn">×</span><img class="modal-content" id="modal-img">
+        </div>
+
+        <!-- 聊天记录查询窗口 -->
+        <div id="search-window" class="window screen">
+            <div class="title-bar">
+                <span class="title-bar-text">查找聊天记录</span>
+                <div class="title-bar-controls">
+                    <button class="button-control" id="search-close-btn">X</button>
+                </div>
+            </div>
+            <div class="search-window-body">
+                <div class="search-controls">
+                    <div class="control-group">
+                        <label for="search-username">用户名:</label>
+                        <input type="text" id="search-username">
+                    </div>
+                    <div class="control-group"><label for="search-keyword">关键字:</label><input type="text" id="search-keyword"></div>
+                    <div class="control-group">
+                        <label>日期:</label><select id="search-year"></select><select id="search-month"></select><select id="search-day"></select>
+                    </div>
+                    <button id="execute-search-btn">开始查找</button>
+                </div>
+                <div class="search-results-container"><div id="search-results"></div></div>
+            </div>
+        </div>
+    </div> <!-- 桌面容器结束 -->
+
+    <!-- ▼▼▼ 新增：任务栏 ▼▼▼ -->
+    <div id="taskbar">
+        <button id="start-button">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACLSURBVDhPzZIBDsAgCEM9xT3E/V/oohctbWkRJe6dSc4T3GQYAbGg2l6O43wZBkF8wINr1U6n0xS8296pVPJgYx5ygeAgeRUMFDBQwUABAwUMlHfAcrP9hmLg/g04f9AQRzYLpWdsM5mUf3j2e5GfM9zDF4dD0D9eOjyLCiK12A4sWybxL1P8AAAAAElFTkSuQmCC" alt="Start">
+            <strong>开始</strong>
+        </button>
+        <div id="system-tray">
+            <span id="clock">12:00</span>
         </div>
     </div>
+    <!-- ▲▲▲ 新增结束 ▲▲▲ -->
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="client.js"></script>
