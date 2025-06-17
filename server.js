@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const { Pool } = require('pg');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
+const path = require('path'); // ▼▼▼ 1. 引入 path 模块 ▼▼▼
 
 // --- Cloudinary 和 数据库 的配置 ---
 cloudinary.config({
@@ -43,8 +44,14 @@ async function main() {
     process.exit(1);
   }
 
-  app.use(express.static('public'));
-  app.get('/', (req, res) => { res.sendFile(__dirname + '/public/index.html'); });
+  // ▼▼▼ 2. 使用 path.join 来构建绝对路径，这是最关键的修改 ▼▼▼
+  app.use(express.static(path.join(__dirname, 'public')));
+
+  app.get('/', (req, res) => { 
+    res.sendFile(path.join(__dirname, 'public', 'index.html')); 
+  });
+  // ▲▲▲ 修改结束 ▲▲▲
+
 
   app.post('/upload', upload.single('image'), async (req, res) => {
     if (!req.file) return res.status(400).send('No file uploaded.');
@@ -63,10 +70,8 @@ async function main() {
     }
   });
 
-  // 聊天记录搜索 API
   app.get('/api/search', async (req, res) => {
     try {
-        // ▼▼▼ 修改：接收 username 参数并加入查询逻辑 ▼▼▼
         const { username, keyword, year, month, day } = req.query;
         let query = 'SELECT nickname, content, message_type, created_at FROM messages';
         const conditions = [];
@@ -94,7 +99,6 @@ async function main() {
             conditions.push(`EXTRACT(DAY FROM created_at) = $${valueIndex++}`);
             values.push(day);
         }
-        // ▲▲▲ 修改结束 ▲▲▲
 
         if (conditions.length > 0) {
             query += ' WHERE ' + conditions.join(' AND ');
