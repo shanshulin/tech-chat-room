@@ -4,7 +4,7 @@ const { Server } = require('socket.io');
 const { Pool } = require('pg');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
-const path = require('path'); // ▼▼▼ 1. 引入 path 模块 ▼▼▼
+const path = require('path');
 
 // --- Cloudinary 和 数据库 的配置 ---
 cloudinary.config({
@@ -44,14 +44,10 @@ async function main() {
     process.exit(1);
   }
 
-  // ▼▼▼ 2. 使用 path.join 来构建绝对路径，这是最关键的修改 ▼▼▼
   app.use(express.static(path.join(__dirname, 'public')));
-
   app.get('/', (req, res) => { 
     res.sendFile(path.join(__dirname, 'public', 'index.html')); 
   });
-  // ▲▲▲ 修改结束 ▲▲▲
-
 
   app.post('/upload', upload.single('image'), async (req, res) => {
     if (!req.file) return res.status(400).send('No file uploaded.');
@@ -77,45 +73,16 @@ async function main() {
         const conditions = [];
         const values = [];
         let valueIndex = 1;
-
-        if (username) {
-            conditions.push(`nickname ILIKE $${valueIndex++}`);
-            values.push(`%${username}%`);
-        }
-        
-        if (keyword) {
-            conditions.push(`content ILIKE $${valueIndex++}`);
-            values.push(`%${keyword}%`);
-        }
-        if (year && year !== 'any') {
-            conditions.push(`EXTRACT(YEAR FROM created_at) = $${valueIndex++}`);
-            values.push(year);
-        }
-        if (month && month !== 'any') {
-            conditions.push(`EXTRACT(MONTH FROM created_at) = $${valueIndex++}`);
-            values.push(month);
-        }
-        if (day && day !== 'any') {
-            conditions.push(`EXTRACT(DAY FROM created_at) = $${valueIndex++}`);
-            values.push(day);
-        }
-
-        if (conditions.length > 0) {
-            query += ' WHERE ' + conditions.join(' AND ');
-        }
+        if (username) { conditions.push(`nickname ILIKE $${valueIndex++}`); values.push(`%${username}%`); }
+        if (keyword) { conditions.push(`content ILIKE $${valueIndex++}`); values.push(`%${keyword}%`); }
+        if (year && year !== 'any') { conditions.push(`EXTRACT(YEAR FROM created_at) = $${valueIndex++}`); values.push(year); }
+        if (month && month !== 'any') { conditions.push(`EXTRACT(MONTH FROM created_at) = $${valueIndex++}`); values.push(month); }
+        if (day && day !== 'any') { conditions.push(`EXTRACT(DAY FROM created_at) = $${valueIndex++}`); values.push(day); }
+        if (conditions.length > 0) { query += ' WHERE ' + conditions.join(' AND '); }
         query += ' ORDER BY created_at DESC LIMIT 100';
-
         const { rows } = await pool.query(query, values);
-        
-        const formattedRows = rows.map(row => ({
-            nickname: row.nickname,
-            msg: row.content,
-            message_type: row.message_type,
-            created_at: row.created_at
-        }));
-        
+        const formattedRows = rows.map(row => ({ nickname: row.nickname, msg: row.content, message_type: row.message_type, created_at: row.created_at }));
         res.json(formattedRows);
-
     } catch (err) {
         console.error('搜索聊天记录失败:', err);
         res.status(500).json({ error: '服务器内部错误' });
@@ -136,7 +103,6 @@ async function main() {
             users[socket.id] = nickname;
             io.emit('update users', Object.values(users));
             socket.broadcast.emit('system message', `“${nickname}”加入了聊天室`);
-            console.log(`“${nickname}”加入，当前在线用户:`, Object.values(users));
         }
     });
     
@@ -144,19 +110,26 @@ async function main() {
       if (socket.nickname) {
         try {
           const result = await pool.query('INSERT INTO messages (nickname, content, message_type) VALUES ($1, $2, $3) RETURNING created_at', [socket.nickname, data.msg, data.type]);
-          io.emit('chat message', { ...data, nickname: socket.nickname, created_at: result.rows[0].created_at });
+          
+          // ▼▼▼ 关键修复：确保广播出去的字段名是 message_type ▼▼▼
+          const messageToSend = {
+            nickname: socket.nickname,
+            msg: data.msg,
+            message_type: data.type, // 将 'type' 映射到 'message_type'
+            created_at: result.rows[0].created_at
+          };
+          io.emit('chat message', messageToSend);
+          // ▲▲▲ 修复结束 ▲▲▲
+
         } catch (err) { console.error('保存消息到数据库失败:', err); }
       }
     });
 
     socket.on('disconnect', () => {
         if (socket.nickname) {
-            console.log(`“${socket.nickname}”断开了连接`);
             delete users[socket.id];
             io.emit('update users', Object.values(users));
             io.emit('system message', `“${socket.nickname}”离开了聊天室`);
-        } else {
-            console.log('一个未命名用户断开了连接 id:', socket.id);
         }
     });
   });
