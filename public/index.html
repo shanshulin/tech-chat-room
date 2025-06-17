@@ -4,19 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>糯米团 Chat (Win95 Desktop)</title>
+    <!-- ▼▼▼ 新增：浏览器标签页图标 ▼▼▼ -->
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAARlJREFUOI2N0r1KA1EUAPF/9xJcRAsbYyVs7EREhYWNWgg2go2gB2gjiFhZmY2gBRsLKy3sRAQbG4ERH8Kdcwmb2HtvQWb34d47d2e4s/qfS0Tj8QdvjQdeA48AW+A7sC54FRgD7wGXwBXwBwyAh8AFcBL4DXwCXgFLgMfgDngGjgBfC6wB94I3gS+Bf8G/oL/A78DvoT+Bf4M/Bf8MvgR+DX4F/gT+Ff5Z/Bn8P/A18B0YBgYlwxLgYPAOGAZGAeOAYeAWMAmMBcYJ44BZYBIYJ1yP2wI3wENgGjgF3gCfgS/As+AP8LfgT/D34D/gL3APvAanwHvgG/ANuAW+Bv6y/gL/D78H/gQ+R8X+B/4B7zsp1+YAAAAASUVORK5CYII=">
+    <!-- ▲▲▲ 新增结束 ▲▲▲ -->
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- ▼▼▼ 新增：桌面容器 ▼▼▼ -->
     <div id="desktop">
-        <!-- 桌面图标 -->
         <div id="chat-app-icon" class="desktop-icon">
             <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHySURBVFhH7ZfRSwJRGMZ/d1d3Yy95lBDyEB5Eeuhf8AlC9LAHyUM2UhDSWz1sCBu6JFuCbYy2tDG1+f/f7MxwZneGnfaB9/PgzDs7O+/zPO8dcllW/y/hA34AJsADeANOgDlwA+YV4Q2s4Ac8wAL8L3wGzIAL8D7wBmxrwr+BR+AHPAc34F/gCrwD78AEuFAT/gfcB+vwOvgE3gP7wFnhAfx/gR2YV4RvwBfwtvAtcAG+AHeA8fAS3gI3oDNh/QF+AW+BN/AIbAAL8BocA+vA/4APwA04D07CK3APfAAj0ZgW/gYcBSdhHfgDPAALsA2cR2fgA5gGnsFR4Qb8ALyAZ+AFaFX4AfgG3gEzwA64rgjfAJfBfWATuAJOc9514GfgsfA5sApsgS3gDThf8A1sAwfBfPAZ+DzwDbwEToF1YDkwD2wD0+A8WArGg1HgHtiuwqfwEfgLfFdhUuA5OBtshd+AecLp4XzweTgf3AaWgfNgHdgGToGfAw+BP+A8OA0swVEgD7wD5oHVgpfA5xX+f4kYgA3wA0wDk/BUsADsBX/gG9gOToPBYBTYDtbBE3AW2AfOgI+LgDlwPY4C94F94CwwDzyCB/BsFVgDNoE54BU4UOC5EDgP/gSmgTNgHdiugt/AvxV8wMLfgYvAfeBH4WvgDbgGLgHPgS+B3wOvwGfgZ+B/4AFwGrgCPgV+Bf4bXgO/B/4A78DvoT+f/wPj3wM/pv8DkNl/BR4K/hF/Ad+GPwKfwg/hp8BX4dM5+CvwEfhL/Ch+B74A/p7/AfwG/BG5X5X/Af6X/gA5LCg7D5kG3AAAAABJRU5ErkJggg==" alt="Chat Icon">
             <span>糯米团 Chat.exe</span>
         </div>
-        <!-- ▲▲▲ 新增结束 ▲▲▲ -->
 
         <!-- 登录窗口 -->
         <div id="login-screen" class="window screen">
@@ -24,7 +24,9 @@
                 <span class="title-bar-text">糯米团 - 用户登录</span>
                 <div class="title-bar-controls">
                     <button class="button-control">?</button>
-                    <button class="button-control">X</button>
+                    <!-- ▼▼▼ 修改：为关闭按钮添加 ID ▼▼▼ -->
+                    <button class="button-control" id="login-close-btn">X</button>
+                    <!-- ▲▲▲ 修改结束 ▲▲▲ -->
                 </div>
             </div>
             <div class="window-body">
@@ -37,7 +39,9 @@
              <div class="title-bar">
                 <span class="title-bar-text">创建用户</span>
                 <div class="title-bar-controls">
-                    <button class="button-control">X</button>
+                    <!-- ▼▼▼ 修改：为关闭按钮添加 ID ▼▼▼ -->
+                    <button class="button-control" id="nickname-close-btn">X</button>
+                    <!-- ▲▲▲ 修改结束 ▲▲▲ -->
                 </div>
             </div>
             <div class="window-body">
@@ -52,7 +56,9 @@
                 <div class="title-bar-controls">
                     <button class="button-control">_</button>
                     <button class="button-control">❐</button>
-                    <button class="button-control">X</button>
+                    <!-- ▼▼▼ 修改：为关闭按钮添加 ID ▼▼▼ -->
+                    <button class="button-control" id="chat-close-btn">X</button>
+                    <!-- ▲▲▲ 修改结束 ▲▲▲ -->
                 </div>
             </div>
             <div class="chat-container">
@@ -101,9 +107,8 @@
                 <div class="search-results-container"><div id="search-results"></div></div>
             </div>
         </div>
-    </div> <!-- 桌面容器结束 -->
+    </div> 
 
-    <!-- ▼▼▼ 新增：任务栏 ▼▼▼ -->
     <div id="taskbar">
         <button id="start-button">
             <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACLSURBVDhPzZIBDsAgCEM9xT3E/V/oohctbWkRJe6dSc4T3GQYAbGg2l6O43wZBkF8wINr1U6n0xS8296pVPJgYx5ygeAgeRUMFDBQwUABAwUMlHfAcrP9hmLg/g04f9AQRzYLpWdsM5mUf3j2e5GfM9zDF4dD0D9eOjyLCiK12A4sWybxL1P8AAAAAElFTkSuQmCC" alt="Start">
@@ -113,8 +118,7 @@
             <span id="clock">12:00</span>
         </div>
     </div>
-    <!-- ▲▲▲ 新增结束 ▲▲▲ -->
-
+    
     <script src="/socket.io/socket.io.js"></script>
     <script src="client.js"></script>
 </body>

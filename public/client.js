@@ -1,8 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // ▼▼▼ 新增：桌面元素和时钟 ▼▼▼
     const chatAppIcon = document.getElementById('chat-app-icon');
     const clockElement = document.getElementById('clock');
-    // ▲▲▲ 新增结束 ▲▲▲
 
     const socket = io({
         reconnection: true,
@@ -44,6 +42,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchDay = document.getElementById('search-day');
     const executeSearchBtn = document.getElementById('execute-search-btn');
     const searchResults = document.getElementById('search-results');
+    
+    // ▼▼▼ 新增：获取新添加的关闭按钮 ▼▼▼
+    const loginCloseBtn = document.getElementById('login-close-btn');
+    const nicknameCloseBtn = document.getElementById('nickname-close-btn');
+    const chatCloseBtn = document.getElementById('chat-close-btn');
+    // ▲▲▲ 新增结束 ▲▲▲
 
     // --- 核心功能函数 ---
     function switchScreen(screenName) { Object.values(screens).forEach(screen => screen.classList.remove('active')); screens[screenName].classList.add('active'); }
@@ -85,24 +89,25 @@ document.addEventListener('DOMContentLoaded', () => {
     async function uploadImage(file) { if (!file || !file.type.startsWith('image/')) return; addSystemMessage(`正在上传图片: ${file.name || 'clipboard_image.png'}...`); const formData = new FormData(); formData.append('image', file); try { const response = await fetch('/upload', { method: 'POST', body: formData }); if (!response.ok) throw new Error('上传失败'); const result = await response.json(); socket.emit('chat message', { type: 'image', msg: result.imageUrl }); } catch (error) { console.error('上传出错:', error); addSystemMessage(`图片上传失败。`); } }
     function populateDateSelectors() { const currentYear = new Date().getFullYear(); searchYear.innerHTML = '<option value="any">所有年份</option>'; for (let y = currentYear; y >= 2023; y--) { searchYear.innerHTML += `<option value="${y}">${y}年</option>`; } searchMonth.innerHTML = '<option value="any">所有月份</option>'; for (let m = 1; m <= 12; m++) { searchMonth.innerHTML += `<option value="${m}">${m}月</option>`; } searchDay.innerHTML = '<option value="any">所有日期</option>'; for (let d = 1; d <= 31; d++) { searchDay.innerHTML += `<option value="${d}">${d}日</option>`; } }
     
-    // ▼▼▼ 新增：时钟更新函数 ▼▼▼
     function updateClock() {
         const now = new Date();
         const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
         clockElement.textContent = `${hours}:${minutes}`;
     }
-    // ▲▲▲ 新增结束 ▲▲▲
-
+    
     // --- 事件绑定 ---
-    // ▼▼▼ 新增：点击桌面图标启动应用 ▼▼▼
+    // ▼▼▼ 修改：更新桌面图标点击逻辑 ▼▼▼
     chatAppIcon.addEventListener('click', () => {
-        // 如果聊天窗口已经打开，就不再显示登录窗口
-        if (!screens.chat.classList.contains('active')) {
+        // 如果用户已经登录 (myNickname 有值)，直接显示聊天窗口
+        if (myNickname) {
+             switchScreen('chat');
+        } else {
+            // 否则，显示登录窗口
              switchScreen('login');
         }
     });
-    // ▲▲▲ 新增结束 ▲▲▲
+    // ▲▲▲ 修改结束 ▲▲▲
 
     messages.addEventListener('click', (e) => { if (e.target && e.target.classList.contains('chat-image')) { imageModal.classList.add('active'); modalImg.src = e.target.src; } });
     closeBtn.addEventListener('click', () => { imageModal.classList.remove('active'); });
@@ -120,7 +125,14 @@ document.addEventListener('DOMContentLoaded', () => {
     sendBtn.addEventListener('click', sendMessage);
     input.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendMessage(); });
     searchBtn.addEventListener('click', () => { searchWindow.classList.add('active'); });
+    
+    // ▼▼▼ 新增：为所有窗口的关闭按钮绑定事件 ▼▼▼
+    loginCloseBtn.addEventListener('click', () => { screens.login.classList.remove('active'); });
+    nicknameCloseBtn.addEventListener('click', () => { screens.nickname.classList.remove('active'); });
+    chatCloseBtn.addEventListener('click', () => { screens.chat.classList.remove('active'); });
     searchCloseBtn.addEventListener('click', () => { searchWindow.classList.remove('active'); });
+    // ▲▲▲ 新增结束 ▲▲▲
+
     executeSearchBtn.addEventListener('click', async () => {
         const queryParams = new URLSearchParams({
             username: searchUsername.value.trim(),
@@ -144,10 +156,8 @@ document.addEventListener('DOMContentLoaded', () => {
     populateDateSelectors();
     for (const code in KAOMOJI_MAP) { const kaomoji = KAOMOJI_MAP[code]; const panelItem = document.createElement('div'); panelItem.className = 'emoji-item'; panelItem.textContent = kaomoji; panelItem.title = code; panelItem.addEventListener('click', () => { input.value += ` ${code} `; input.focus(); emojiPanel.classList.add('hidden'); }); emojiPanel.appendChild(panelItem); }
     
-    // ▼▼▼ 新增：启动时钟 ▼▼▼
     updateClock();
-    setInterval(updateClock, 1000 * 30); // 每30秒更新一次时钟即可，无需太频繁
-    // ▲▲▲ 新增结束 ▲▲▲
+    setInterval(updateClock, 1000 * 30); 
 
     // --- Socket.IO 事件处理 ---
     socket.on('load history', (history) => { messages.innerHTML = ''; history.forEach(data => addChatMessage(data)); addSystemMessage('欢迎来到聊天室！'); });
