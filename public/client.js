@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let myNickname = sessionStorage.getItem('nickname') || '';
     const KAOMOJI_MAP = { ':happy:': '(^▽^)', ':lol:': 'o(>▽<)o', ':love:': '(｡♥‿♥｡)', ':excited:': '(*^▽^*)', ':proud:': '(´_ゝ`)', ':sad:': '(T_T)', ':cry:': '(；′⌒`)', ':sob:': '༼ಢ_ಢ༽', ':wow:': 'Σ(°ロ°)', ':speechless:': '(－_－) zzZ', ':confused:': '(°_°)?', ':wave:': '(^_^)/', ':ok:': 'd(^_^o)', ':sorry:': 'm(_ _)m', ':run:': 'ε=ε=┌( >_<)┘', ':tableflip:': '(╯°□°）╯︵ ┻━┻', ':cat:': '(=^ェ^=)', ':bear:': 'ʕ •ᴥ•ʔ', ':note:': 'ヾ( ´ A ` )ﾉ', ':sleepy:': '(´-ω-`)' };
 
-    // ▼▼▼ 新增：窗口拖拽功能的核心函数 ▼▼▼
+    // ▼▼▼ 修改：窗口拖拽功能的核心函数 (修复跳动Bug) ▼▼▼
     function makeDraggable(windowElement) {
         const titleBar = windowElement.querySelector('.title-bar');
         if (!titleBar) return;
@@ -51,31 +51,31 @@ document.addEventListener('DOMContentLoaded', () => {
         let offsetX, offsetY;
 
         titleBar.addEventListener('mousedown', (e) => {
-            // 如果窗口已最大化，则不允许拖拽
             if (windowElement.classList.contains('maximized')) {
                 return;
             }
 
             isDragging = true;
-            // 计算鼠标点击位置相对于窗口左上角的偏移量
-            offsetX = e.clientX - windowElement.offsetLeft;
-            offsetY = e.clientY - windowElement.offsetTop;
+            
+            // 关键修复：在开始拖动前，将窗口从 transform 定位转换为 top/left 定位
+            // 这样可以避免因移除 transform 导致的“跳动”
+            const rect = windowElement.getBoundingClientRect();
+            windowElement.style.top = `${rect.top}px`;
+            windowElement.style.left = `${rect.left}px`;
+            windowElement.style.transform = 'none'; // 现在可以安全地移除了
 
-            // 在拖拽期间，临时移除 transform 以便 top/left 定位生效
-            windowElement.style.transform = 'none';
+            // 重新计算基于新定位的偏移量
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+
             document.body.classList.add('dragging-active');
-
-            // 阻止默认的文本选中行为
             e.preventDefault();
         });
 
         document.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
-
-            // 根据鼠标位置和偏移量计算窗口新位置
             const newX = e.clientX - offsetX;
             const newY = e.clientY - offsetY;
-
             windowElement.style.left = `${newX}px`;
             windowElement.style.top = `${newY}px`;
         });
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    // ▲▲▲ 新增结束 ▲▲▲
+    // ▲▲▲ 修改结束 ▲▲▲
 
     // --- 核心功能函数 (保持不变) ---
     function switchScreen(screenName) { Object.values(screens).forEach(screen => screen.classList.remove('active')); if (screens[screenName]) screens[screenName].classList.add('active'); }
@@ -158,9 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
     executeSearchBtn.addEventListener('click', async () => { const queryParams = new URLSearchParams({ username: searchUsername.value.trim(), keyword: searchKeyword.value.trim(), year: searchYear.value, month: searchMonth.value, day: searchDay.value }); searchResults.innerHTML = '正在查询中...'; try { const response = await fetch(`/api/search?${queryParams.toString()}`); if (!response.ok) throw new Error('查询失败'); const results = await response.json(); searchResults.innerHTML = ''; if (results.length === 0) { searchResults.innerHTML = '没有找到匹配的记录。'; } else { results.forEach(record => { const item = createChatMessageElement(record); searchResults.appendChild(item); }); } } catch(err) { searchResults.innerHTML = '查询出错，请稍后再试。'; console.error('Search error:', err); } });
 
     // --- 初始化 ---
-    // ▼▼▼ 新增：让所有窗口都可拖拽 ▼▼▼
     document.querySelectorAll('.window').forEach(makeDraggable);
-
     populateDateSelectors();
     for (const code in KAOMOJI_MAP) { const kaomoji = KAOMOJI_MAP[code]; const panelItem = document.createElement('div'); panelItem.className = 'emoji-item'; panelItem.textContent = kaomoji; panelItem.title = code; panelItem.addEventListener('click', () => { input.value += ` ${code} `; input.focus(); emojiPanel.classList.add('hidden'); }); emojiPanel.appendChild(panelItem); }
     updateClock();
