@@ -539,3 +539,61 @@ button:active {
 #search-results .chat-image {
     margin-top: 0;
 }
+
+/* ▼▼▼ 新增：窗口最大化和任务栏标签的样式 ▼▼▼ */
+
+/* --- 窗口最大化样式 --- */
+.window.maximized {
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: calc(100% - 32px) !important; /* 减去任务栏高度 */
+    transform: none !important;
+    max-width: none !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+.window.maximized .chat-container {
+    height: calc(100% - 36px); /* 100% 高度减去标题栏和padding */
+}
+
+.window.maximized #messages {
+    height: 100%; /* 在最大化时，让消息区域占满剩余空间 */
+}
+
+
+/* --- 任务栏标签容器 --- */
+#taskbar-apps {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    margin-left: 4px;
+}
+
+/* --- 任务栏标签样式 --- */
+.taskbar-tab {
+    height: 26px;
+    padding: 0 10px;
+    margin-right: 2px;
+    line-height: 26px;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border: 1px solid;
+    cursor: pointer;
+    background: #c0c0c0;
+    box-shadow: 1px 1px 0 #000;
+}
+
+.taskbar-tab.active {
+    /* 模拟按下去的效果 */
+    border-top-color: #000;
+    border-left-color: #000;
+    border-right-color: #fff;
+    border-bottom-color: #fff;
+    box-shadow: none;
+    background: #e0e0e0;
+    transform: translate(1px, 1px);
+}
