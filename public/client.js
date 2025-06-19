@@ -33,16 +33,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginCloseBtn = document.getElementById('login-close-btn');
     const nicknameCloseBtn = document.getElementById('nickname-close-btn');
     const chatCloseBtn = document.getElementById('chat-close-btn');
-
-    // ▼▼▼ 新增：获取新添加的DOM元素 ▼▼▼
     const minimizeBtn = document.getElementById('minimize-btn');
     const maximizeBtn = document.getElementById('maximize-btn');
     const taskbarApps = document.getElementById('taskbar-apps');
-    // ▲▲▲ 新增结束 ▲▲▲
 
     // --- 状态变量 ---
     const socket = io({ reconnection: true, reconnectionDelay: 1000, reconnectionDelayMax: 5000, reconnectionAttempts: Infinity });
-    let myNickname = sessionStorage.getItem('nickname') || ''; // 从sessionStorage恢复昵称
+    let myNickname = sessionStorage.getItem('nickname') || '';
     const KAOMOJI_MAP = { ':happy:': '(^▽^)', ':lol:': 'o(>▽<)o', ':love:': '(｡♥‿♥｡)', ':excited:': '(*^▽^*)', ':proud:': '(´_ゝ`)', ':sad:': '(T_T)', ':cry:': '(；′⌒`)', ':sob:': '༼ಢ_ಢ༽', ':wow:': 'Σ(°ロ°)', ':speechless:': '(－_－) zzZ', ':confused:': '(°_°)?', ':wave:': '(^_^)/', ':ok:': 'd(^_^o)', ':sorry:': 'm(_ _)m', ':run:': 'ε=ε=┌( >_<)┘', ':tableflip:': '(╯°□°）╯︵ ┻━┻', ':cat:': '(=^ェ^=)', ':bear:': 'ʕ •ᴥ•ʔ', ':note:': 'ヾ( ´ A ` )ﾉ', ':sleepy:': '(´-ω-`)' };
 
     // --- 核心功能函数 ---
@@ -55,43 +52,40 @@ document.addEventListener('DOMContentLoaded', () => {
     function populateDateSelectors() { const currentYear = new Date().getFullYear(); searchYear.innerHTML = '<option value="any">所有年份</option>'; for (let y = currentYear; y >= 2023; y--) { searchYear.innerHTML += `<option value="${y}">${y}年</option>`; } searchMonth.innerHTML = '<option value="any">所有月份</option>'; for (let m = 1; m <= 12; m++) { searchMonth.innerHTML += `<option value="${m}">${m}月</option>`; } searchDay.innerHTML = '<option value="any">所有日期</option>'; for (let d = 1; d <= 31; d++) { searchDay.innerHTML += `<option value="${d}">${d}日</option>`; } }
     function updateClock() { const now = new Date(); const hours = String(now.getHours()).padStart(2, '0'); const minutes = String(now.getMinutes()).padStart(2, '0'); clockElement.textContent = `${hours}:${minutes}`; }
 
-    // ▼▼▼ 新增：打开聊天窗口的函数，封装重复逻辑 ▼▼▼
     function openChatWindow() {
-        switchScreen('chat'); // 显示聊天窗口
-
-        // 如果任务栏标签不存在，则创建一个
-        if (!document.getElementById('chat-taskbar-tab')) {
-            const taskbarTab = document.createElement('button');
+        switchScreen('chat');
+        let taskbarTab = document.getElementById('chat-taskbar-tab');
+        if (!taskbarTab) {
+            taskbarTab = document.createElement('div');
             taskbarTab.id = 'chat-taskbar-tab';
-            taskbarTab.className = 'taskbar-tab active'; // 初始为激活状态
             taskbarTab.textContent = '糯米团 v1.0 - ...';
+            taskbarApps.appendChild(taskbarTab);
 
-            // 点击任务栏标签可以切换窗口显示/隐藏
             taskbarTab.addEventListener('click', () => {
-                if (screens.chat.classList.contains('active')) {
+                const isChatActive = screens.chat.classList.contains('active');
+                if (isChatActive) {
                     screens.chat.classList.remove('active');
                     taskbarTab.classList.remove('active');
+                    taskbarTab.classList.add('inactive');
                 } else {
                     screens.chat.classList.add('active');
                     taskbarTab.classList.add('active');
+                    taskbarTab.classList.remove('inactive');
                 }
             });
-            taskbarApps.appendChild(taskbarTab);
         }
+        taskbarTab.className = 'taskbar-tab active';
     }
-    // ▲▲▲ 新增结束 ▲▲▲
 
     // --- 事件绑定 ---
     chatAppIcon.addEventListener('click', () => {
-        // 如果聊天窗口已经打开（即任务栏有标签），则直接激活它
         const taskbarTab = document.getElementById('chat-taskbar-tab');
-        if (taskbarTab) {
-            screens.chat.classList.add('active');
-            taskbarTab.classList.add('active');
+        if (taskbarTab && !screens.chat.classList.contains('active')) {
+             taskbarTab.click();
         } else if (myNickname) {
-            openChatWindow(); // 如果已登录但窗口未打开，则打开
+            openChatWindow();
         } else {
-            switchScreen('login'); // 否则显示登录
+            switchScreen('login');
         }
     });
 
@@ -105,10 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
     emojiBtn.addEventListener('click', (e) => { e.stopPropagation(); emojiPanel.classList.toggle('hidden'); });
     document.addEventListener('click', () => { if (!emojiPanel.classList.contains('hidden')) emojiPanel.classList.add('hidden'); });
     
+    // ▼▼▼ 修改：密码固定为 MWNMT ▼▼▼
     loginBtn.addEventListener('click', () => {
-        // 使用一个固定的密码，或者你可以从 localStorage 读取
-        const validPassword = localStorage.getItem('chat_password') || '12345';
-        if (passwordInput.value === validPassword) {
+        if (passwordInput.value === 'MWNMT') {
             switchScreen('nickname');
         } else {
             errorMsg.textContent = '错误: 密码不正确。';
@@ -122,9 +115,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const nickname = nicknameInput.value.trim();
         if (nickname) {
             myNickname = nickname;
-            sessionStorage.setItem('nickname', nickname); // 保存昵称到 sessionStorage
+            sessionStorage.setItem('nickname', nickname);
             socket.emit('join', nickname);
-            openChatWindow(); // 使用新函数打开聊天窗口
+            openChatWindow();
         }
     });
 
@@ -139,32 +132,51 @@ document.addEventListener('DOMContentLoaded', () => {
         screens.chat.classList.remove('active');
         const taskbarTab = document.getElementById('chat-taskbar-tab');
         if (taskbarTab) taskbarTab.remove();
-        // 如果需要，可以在这里断开 socket 或重置状态
     });
 
     searchCloseBtn.addEventListener('click', () => { searchWindow.classList.remove('active'); });
     
-    // ▼▼▼ 新增：最小化和最大化按钮的事件监听 ▼▼▼
     minimizeBtn.addEventListener('click', () => {
         screens.chat.classList.remove('active');
         const taskbarTab = document.getElementById('chat-taskbar-tab');
-        if (taskbarTab) taskbarTab.classList.remove('active');
+        if (taskbarTab) {
+            taskbarTab.classList.remove('active');
+            taskbarTab.classList.add('inactive');
+        }
     });
 
     maximizeBtn.addEventListener('click', () => {
         screens.chat.classList.toggle('maximized');
     });
-    // ▲▲▲ 新增结束 ▲▲▲
 
-    executeSearchBtn.addEventListener('click', async () => { /* ... 搜索逻辑不变 ... */ });
+    executeSearchBtn.addEventListener('click', async () => { 
+        const queryParams = new URLSearchParams({
+            username: searchUsername.value.trim(),
+            keyword: searchKeyword.value.trim(),
+            year: searchYear.value,
+            month: searchMonth.value,
+            day: searchDay.value
+        });
+        searchResults.innerHTML = '正在查询中...';
+        try {
+            const response = await fetch(`/api/search?${queryParams.toString()}`);
+            if (!response.ok) throw new Error('查询失败');
+            const results = await response.json();
+            searchResults.innerHTML = '';
+            if (results.length === 0) { searchResults.innerHTML = '没有找到匹配的记录。'; } 
+            else { results.forEach(record => { const item = createChatMessageElement(record); searchResults.appendChild(item); }); }
+        } catch(err) { searchResults.innerHTML = '查询出错，请稍后再试。'; console.error('Search error:', err); }
+     });
 
     // --- 初始化 ---
-    // 首次密码生成逻辑
+    // ▼▼▼ 修改：注释掉随机密码生成逻辑 ▼▼▼
+    /*
     if (!localStorage.getItem('chat_password')) {
         const randomPassword = Math.random().toString(36).substring(2, 8);
         localStorage.setItem('chat_password', randomPassword);
         alert(`首次使用，已为您生成一个初始密码: ${randomPassword}\n请记住它，或者在 client.js 中修改。`);
     }
+    */
 
     populateDateSelectors();
     for (const code in KAOMOJI_MAP) { const kaomoji = KAOMOJI_MAP[code]; const panelItem = document.createElement('div'); panelItem.className = 'emoji-item'; panelItem.textContent = kaomoji; panelItem.title = code; panelItem.addEventListener('click', () => { input.value += ` ${code} `; input.focus(); emojiPanel.classList.add('hidden'); }); emojiPanel.appendChild(panelItem); }
