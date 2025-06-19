@@ -545,7 +545,8 @@ button:active {
     top: 0 !important;
     left: 0 !important;
     width: 100% !important;
-    height: calc(100% - 32px) !important; /* 减去任务栏高度 */
+    /* ▼▼▼ 修改：修复双重减法bug ▼▼▼ */
+    height: 100% !important; 
     transform: none !important;
     max-width: none !important;
     box-shadow: none !important;
@@ -587,8 +588,8 @@ button:active {
 /* 激活状态 (按下去的效果) */
 .taskbar-tab.active {
     border-color: #808080 #fff #fff #808080;
-    background: #e0e0e0; /* 使用一个稍微不同的灰色来增强凹陷感 */
-    padding-top: 3px; /* 文字向下移动一点，更有按下的感觉 */
+    background: #e0e0e0;
+    padding-top: 3px;
     padding-left: 7px;
 }
 
