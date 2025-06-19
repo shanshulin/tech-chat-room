@@ -80,11 +80,14 @@ body {
     box-shadow: 1px 1px 0 #000;
 }
 
+/* ▼▼▼ MODIFIED ▼▼▼ */
 #start-button img {
-    width: 16px;
-    height: 16px;
+    width: 22px; /* Adjusted for new icon size */
+    height: 22px; /* Adjusted for new icon size */
     margin-right: 5px;
 }
+/* ▲▲▲ MODIFIED ▲▲▲ */
+
 
 #start-button strong {
     font-weight: bold;
