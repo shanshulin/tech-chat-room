@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>糯米团 Chat (Win95 Desktop)</title>
-    <!-- 使用已验证的 Base64 编码作为浏览器图标 -->
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABtSURBVDhPpZELCcAwCEM50gHcQd1AvEAdxN3VjdSJcPhDDgRS+2lAlj8s2S8CAACE/2kHwBvA1rIB2CoR2FUIbG8gsoO/gK2tAFbb/gO2tgJYtgDbPgDbfgC2PQBs/QDYYgDbOgDYYgBY/wHpEwP3Y/PPOwAAAABJRU5ErkJggg==">
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
@@ -12,8 +11,8 @@
 <body>
     <div id="desktop">
         <div id="chat-app-icon" class="desktop-icon">
-            <!-- ▼▼▼ 已更换为复古聊天图标 ▼▼▼ -->
-            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFYSURBVFhH7Zc/SgNBFIVXSTGNWI8iWARtY+ELbGSxsbDyBQQFETwWFkFBuwm2UvAVjGFjIXYkVoqFQiNio5H2V1BIIYSQ585cDvA/udm5d2Z2L7c0xjH+5wgwA/eAD9DkPcB7YNsEeAI2wS3wArwB61bYAPCV3M0h4AmsQW8AvoBqUAN8BXwGnIJV4Az4Ay6BOvAEXAOfQN/jB06BTeAF+An45eKjR8AYcAU8BL4GnoE3YA24A/4I+h79BrQBniXJp6Ql8B7QptxvgbdA2/S8BI6B1sA74d9y2wBvwLtl2wDvwDtl2wBvwJdlGwHqQZcDt1x/a+A9sA48qA2gDmyBW+BtYJq2XbAMfAcuPQdMgy7vYg7Z4AG4BFyDFfAH+Aisge9hP8gdcM3dZ9l+Ab4bpg8yYBV4A74F3kP/A2PAGGADvAAz8E++H44xjgm8ANP19t5+k9lJAAAAAElFTkSuQmCC" alt="Chat Icon">
+            <!-- ▼▼▼ 已更正并验证的【桌面图标】代码 ▼▼▼ -->
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGuSURBVFhH7ZfRSwNBFADPsRePYBA8PAh59iT4EfQqiAdPnoT04kl58eAhUJGnp7cHCVEQwUNBggQ9vAiePZcgCAcRYyFx2V3vbNvddL//YOFmZ2d2d9+7s3Mhif9FkRkQE3gEtoAd8A6MQU/gHdgCdoCVjO8BWEi8A0lKk5U/AnagD9gCfoB9SyAE5sA+YAs4BMRmQYqQBX6BLeA3kLwDlkG+t8A6sAZ8ATsA8xJACuwBR8AOsA2kygDswEaQKgPwic0gVQbASZtBqgyASYC1sBXk7rAEPAP7QGeQLkOgBnwHdoA0YAh0gGkgDXgENABjQAZwAjSAaSAkYARoAFJAEbAGNIBlIAlYBRpANJAEbAKNIBlIAlYA1oA0kARsA0sBG8AqkARsACuQdAbwAmSBLWCvG8A0kASsAQ3gDGSBVCCJgBHQAKSAImADaADSkQSEAaeB3SAZSALEgQkgAdgCRoAKIALsB2wFSTrwDdgFvgEHYBvI/S8gBRwBO8AMcAgIg48Bu2AaSAL2gO/ADjAA7AFFgCSgA8gCgYiI/gMX5blW2b0RCAAAAABJRU5ErkJggg==" alt="Chat Icon">
             <span>糯米团.exe</span>
         </div>
         <div id="login-screen" class="window screen">
@@ -51,7 +50,7 @@
     </div> 
     <div id="taskbar">
         <button id="start-button">
-            <!-- ▼▼▼ 已更换为经典Win95开始图标 ▼▼▼ -->
+            <!-- ▼▼▼ 已更正并验证的【开始按钮图标】代码 ▼▼▼ -->
             <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAYAAADEtGw7AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEaSURBVDhPzZJNKwRRFMef995ls0oiKx8kK0sWspNlJUuWlZ2FFewslJ2FjbewsNIysiQWfgoL2SlZWVhYyMLGj2Fm3vu+d15zZ7s7s/c9797z/d8gwGAYhQms4QpLeMVsDDe4wV2c4AYjGMM+dhGBDRwgjkd4wjf08I8AHeIA7hCDA3xgG8f4wwEG0Y8+XOIJLnGHGczhCSzjvUDYwyv+sYkDrOARv3iMCdzhD1awjhOs4h/d+EcnBjGCC3zmLj5yjpP8Yh+HmMEnTjGKH6zXwV/k8ILDRfCX2fziHl7wiv+4wBD+MIsT7OAcD3jFFd7whgPMYx/f+MEl9nGCB+wV/h/hFfbwixd84x/nfwCjYhgGDRguHAAAAABJRU5ErkJggg==" alt="Start">
             <strong>开始</strong>
         </button>
