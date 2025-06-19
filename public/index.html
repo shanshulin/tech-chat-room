@@ -64,7 +64,8 @@
             </div>
         </div>
 
-        <div id="rss-reader-screen" class="window screen" style="max-width: 700px;">
+        <!-- ▼▼▼ RSS阅读器结构重大更新 ▼▼▼ -->
+        <div id="rss-reader-screen" class="window screen" style="max-width: 900px;">
             <div class="title-bar">
                 <span class="title-bar-text">Netscape RSS Navigator</span>
                 <div class="title-bar-controls">
@@ -74,34 +75,27 @@
                 </div>
             </div>
             <ul class="menu-bar">
-                <li><u>F</u>ile</li>
-                <li><u>E</u>dit</li>
-                <li><u>V</u>iew</li>
-                <li><u>G</u>o</li>
-                <li><u>B</u>ookmarks</li>
-                <li><u>O</u>ptions</li>
-                <li><u>D</u>irectory</li>
-                <li><u>H</u>elp</li>
+                <li><u>F</u>ile</li><li><u>E</u>dit</li><li><u>V</u>iew</li><li><u>G</u>o</li><li><u>B</u>ookmarks</li><li><u>O</u>ptions</li><li><u>D</u>irectory</li><li><u>H</u>elp</li>
             </ul>
             <div class="rss-toolbar">
-                <button id="rss-back-btn" disabled>Back</button>
-                <button id="rss-forward-btn" disabled>Forward</button>
-                <button id="rss-reload-btn">Reload</button>
-                <button id="rss-add-bookmark-btn">Add Bookmark</button>
-                <button id="rss-bookmarks-btn">Bookmarks</button>
+                <button id="rss-back-btn" disabled>Back</button><button id="rss-forward-btn" disabled>Forward</button><button id="rss-reload-btn">Reload</button><button id="rss-add-bookmark-btn">Add Bookmark</button><button id="rss-bookmarks-btn">Bookmarks</button>
             </div>
             <div class="location-bar">
-                <label for="rss-url-input">Location:</label>
-                <input type="text" id="rss-url-input" value="https://rsshub.app/theverge">
-                <button id="fetch-rss-btn">Go</button>
+                <label for="rss-url-input">Location:</label><input type="text" id="rss-url-input" value="https://rsshub.app/theverge"><button id="fetch-rss-btn">Go</button>
             </div>
             <div class="rss-main-content">
+                <!-- 左栏：书签 -->
                 <div id="rss-bookmarks-panel" class="sunken-panel">
                     <h4>Bookmarks</h4>
                     <ul id="bookmarks-list"></ul>
                 </div>
-                <div id="rss-content" class="sunken-panel">
-                    <p>Welcome to Netscape RSS Navigator! Enter a feed URL and click 'Go'.</p>
+                <!-- 中栏：文章列表 -->
+                <div id="rss-list-panel" class="sunken-panel">
+                    <!-- 文章列表将由JS动态填充 -->
+                </div>
+                <!-- 右栏：文章详情 -->
+                <div id="rss-article-panel" class="sunken-panel">
+                    <p>Select an item from the list to read.</p>
                 </div>
             </div>
             <div class="status-bar">
@@ -109,13 +103,11 @@
                 <p id="rss-item-count" class="status-bar-field"></p>
             </div>
         </div>
+        <!-- ▲▲▲ RSS阅读器结构更新结束 ▲▲▲ -->
     </div> 
     
     <div id="taskbar">
-        <button id="start-button">
-            <img src="start.ico" alt="Start">
-            <strong>开始</strong>
-        </button>
+        <button id="start-button"><img src="start.ico" alt="Start"><strong>开始</strong></button>
         <div id="taskbar-apps"></div>
         <div id="system-tray"><span id="clock">12:00</span></div>
     </div>
