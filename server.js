@@ -1,4 +1,4 @@
-// server.js (最终健壮版，带伪装请求头)
+// server.js (最终完整修复版)
 
 require('dotenv').config();
 
@@ -16,9 +16,11 @@ const streamifier = require('streamifier');
 
 const parser = new Parser();
 
+// --- 缓存配置 ---
 const cache = new Map();
-const CACHE_DURATION = 10 * 60 * 1000;
+const CACHE_DURATION = 10 * 60 * 1000; // 缓存10分钟
 
+// --- 全局配置 ---
 if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.DATABASE_URL) {
     console.error("FATAL ERROR: Missing CLOUDINARY or DATABASE_URL environment variables.");
     process.exit(1);
@@ -42,13 +44,49 @@ const io = new Server(server);
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-async function initializeDatabase() { /* ... */ }
+// --- 数据库初始化 ---
+async function initializeDatabase() {
+  try {
+    const client = await pool.connect();
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        nickname VARCHAR(100) NOT NULL,
+        content TEXT NOT NULL,
+        message_type VARCHAR(10) DEFAULT 'text',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    client.release();
+    console.log('Database table "messages" is ready.');
+  } catch (dbErr) {
+    console.error('FATAL ERROR: Could not initialize database!', dbErr);
+    process.exit(1);
+  }
+}
 
+// --- 静态文件服务 ---
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.post('/upload', upload.single('image'), (req, res) => { /* ... */ });
 
-// ▼▼▼ 核心修改点：为 /parse-rss 请求添加 User-Agent 头 ▼▼▼
+// --- API 路由 ---
+
+// 图片上传路由 (已恢复并确认正常)
+app.post('/upload', upload.single('image'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded.' });
+    }
+    let cld_upload_stream = cloudinary.uploader.upload_stream({ folder: "chat_app" }, (error, result) => {
+        if (error) {
+            console.error('Cloudinary upload error:', error);
+            return res.status(500).json({ error: 'Failed to upload image.' });
+        }
+        res.status(200).json({ imageUrl: result.secure_url });
+    });
+    streamifier.createReadStream(req.file.buffer).pipe(cld_upload_stream);
+});
+
+// RSS解析路由 (带缓存、超时和伪装头)
 app.get('/parse-rss', (req, res) => {
     const feedUrl = req.query.url;
     if (!feedUrl) {
@@ -64,9 +102,8 @@ app.get('/parse-rss', (req, res) => {
     console.log(`Fetching new data for: ${feedUrl}`);
     const protocol = feedUrl.startsWith('https') ? https : http;
 
-    // 定义请求选项，包含超时和伪装的User-Agent
     const options = {
-        timeout: 8000, // 8秒超时
+        timeout: 8000,
         headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
@@ -108,64 +145,53 @@ app.get('/parse-rss', (req, res) => {
         res.status(502).json({ error: 'Bad Gateway: Could not fetch the RSS feed from the URL.' });
     });
 });
-// ▲▲▲ 核心修改点结束 ▲▲▲
 
 
-// 为了完整性，我把未改动的部分也补充进来
-(async function() {
-    await initializeDatabase();
+// --- Socket.IO 连接逻辑 ---
+const users = {};
+io.on('connection', async (socket) => {
+    console.log('User connected:', socket.id);
+    try {
+        const result = await pool.query('SELECT nickname, content AS msg, message_type, created_at FROM messages ORDER BY created_at DESC LIMIT 50');
+        socket.emit('load history', result.rows.reverse());
+    } catch (err) { console.error('Failed to read history:', err); }
     
-    app.post('/upload', upload.single('image'), (req, res) => {
-        if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
-        let cld_upload_stream = cloudinary.uploader.upload_stream({ folder: "chat_app" }, (error, result) => {
-            if (error) {
-                console.error('Cloudinary upload error:', error);
-                return res.status(500).json({ error: 'Failed to upload image.' });
-            }
-            res.status(200).json({ imageUrl: result.secure_url });
-        });
-        streamifier.createReadStream(req.file.buffer).pipe(cld_upload_stream);
+    socket.on('join', (nickname) => {
+        if (nickname) {
+            socket.nickname = nickname;
+            users[socket.id] = nickname;
+            io.emit('update users', Object.values(users));
+            socket.broadcast.emit('system message', `“${nickname}”加入了聊天室`);
+        }
     });
-
-    const users = {};
-    io.on('connection', async (socket) => {
-        console.log('User connected:', socket.id);
+    
+    socket.on('chat message', async (data) => {
+      if (socket.nickname && data.msg) {
         try {
-            const result = await pool.query('SELECT nickname, content AS msg, message_type, created_at FROM messages ORDER BY created_at DESC LIMIT 50');
-            socket.emit('load history', result.rows.reverse());
-        } catch (err) { console.error('Failed to read history:', err); }
-        
-        socket.on('join', (nickname) => {
-            if (nickname) {
-                socket.nickname = nickname;
-                users[socket.id] = nickname;
-                io.emit('update users', Object.values(users));
-                socket.broadcast.emit('system message', `“${nickname}”加入了聊天室`);
-            }
-        });
-        
-        socket.on('chat message', async (data) => {
-          if (socket.nickname && data.msg) {
-            try {
-              const result = await pool.query('INSERT INTO messages (nickname, content, message_type) VALUES ($1, $2, $3) RETURNING created_at', [socket.nickname, data.msg, data.type]);
-              const messageToSend = { nickname: socket.nickname, msg: data.msg, message_type: data.type, created_at: result.rows[0].created_at };
-              io.emit('chat message', messageToSend);
-            } catch (err) { 
-                console.error('Failed to save message:', err);
-            }
-          }
-        });
-
-        socket.on('disconnect', () => {
-            if (socket.nickname) {
-                delete users[socket.id];
-                io.emit('update users', Object.values(users));
-                io.emit('system message', `“${socket.nickname}”离开了聊天室`);
-            }
-            console.log('User disconnected:', socket.id);
-        });
+          const result = await pool.query('INSERT INTO messages (nickname, content, message_type) VALUES ($1, $2, $3) RETURNING created_at', [socket.nickname, data.msg, data.type]);
+          const messageToSend = { nickname: socket.nickname, msg: data.msg, message_type: data.type, created_at: result.rows[0].created_at };
+          io.emit('chat message', messageToSend);
+        } catch (err) { 
+            console.error('Failed to save message:', err);
+        }
+      }
     });
 
+    socket.on('disconnect', () => {
+        if (socket.nickname) {
+            delete users[socket.id];
+            io.emit('update users', Object.values(users));
+            io.emit('system message', `“${socket.nickname}”离开了聊天室`);
+        }
+        console.log('User disconnected:', socket.id);
+    });
+});
+
+// --- 启动服务器 ---
+async function startServer() {
+    await initializeDatabase();
     const PORT = process.env.PORT || 3000;
     server.listen(PORT, () => { console.log(`Server is running successfully on http://localhost:${PORT}`); });
-})();
+}
+
+startServer();
