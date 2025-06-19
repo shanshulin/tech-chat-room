@@ -120,6 +120,8 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 10;
+    display: flex;
+    flex-direction: column;
 }
 
 .title-bar {
@@ -132,6 +134,7 @@ body {
     box-sizing: border-box;
     position: relative;
     user-select: none;
+    flex-shrink: 0;
 }
 
 .title-bar-text {
@@ -243,6 +246,7 @@ button:active {
 .chat-container {
     display: flex;
     padding: 10px;
+    flex-grow: 1;
 }
 
 #users-list-container {
@@ -552,7 +556,8 @@ button:active {
     border: none !important;
 }
 
-.window.maximized .chat-container {
+.window.maximized .chat-container,
+#rss-reader-screen.maximized .rss-main-content {
     height: calc(100% - 36px); /* 100% 高度减去标题栏和padding */
 }
 
@@ -605,4 +610,144 @@ button:active {
 body.dragging-active {
     cursor: move; /* 当正在拖拽时，整个页面的鼠标都显示移动手-势 */
     user-select: none; /* 防止拖拽时选中页面上的其他文字 */
+}
+
+/* --- Netscape风格的RSS阅读器样式 --- */
+.menu-bar {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 2px 4px;
+    background: #c0c0c0;
+    border-bottom: 1px solid #808080;
+    flex-shrink: 0;
+}
+
+.menu-bar li {
+    padding: 2px 6px;
+    cursor: default;
+}
+
+.menu-bar li:hover {
+    background: #000080;
+    color: white;
+}
+
+.rss-toolbar, .location-bar {
+    display: flex;
+    padding: 5px;
+    gap: 5px;
+    align-items: center;
+    border-bottom: 1px solid #808080;
+    flex-shrink: 0;
+}
+
+.rss-toolbar button, .location-bar button {
+    padding: 4px 12px;
+}
+
+.location-bar label {
+    font-weight: bold;
+}
+.location-bar input {
+    flex-grow: 1;
+    width: auto;
+}
+
+.rss-main-content {
+    display: flex;
+    flex-grow: 1;
+    padding: 10px;
+    gap: 10px;
+    overflow: hidden;
+}
+
+.sunken-panel {
+    background: white;
+    border: 2px solid;
+    border-color: #808080 #fff #fff #808080;
+    padding: 10px;
+    overflow-y: auto;
+}
+
+#rss-bookmarks-panel {
+    width: 200px;
+    flex-shrink: 0;
+    display: none; /* 默认隐藏 */
+}
+#rss-bookmarks-panel.active {
+    display: block;
+}
+#rss-bookmarks-panel h4 {
+    margin: 0 0 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #808080;
+}
+#bookmarks-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+#bookmarks-list li {
+    padding: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#bookmarks-list li:hover {
+    background: #000080;
+    color: white;
+}
+
+#rss-content {
+    flex-grow: 1;
+    text-align: left;
+}
+
+#rss-content h2 {
+    margin: 0 0 10px;
+    font-size: 1.2em;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #808080;
+}
+
+#rss-content a {
+    color: #0000ff;
+    text-decoration: underline;
+}
+
+#rss-content .rss-item {
+    border-bottom: 1px dotted #ccc;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+#rss-content .rss-item:last-child {
+    border-bottom: none;
+}
+#rss-content .rss-item h3 {
+    margin: 0 0 5px;
+    font-size: 1.1em;
+}
+#rss-content .rss-item p {
+    margin: 5px 0 0;
+    font-size: 15px; /* 调大一点像素字体 */
+    color: #333;
+    line-height: 1.5;
+}
+
+.status-bar {
+    display: flex;
+    border-top: 1px solid #808080;
+    padding: 2px 4px;
+    flex-shrink: 0;
+}
+
+.status-bar-field {
+    border: 1px solid;
+    border-color: #808080 #fff #fff #808080;
+    padding: 0 5px;
+    margin: 0 2px;
+    line-height: 20px;
+    min-width: 100px;
 }

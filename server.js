@@ -6,6 +6,11 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const path = require('path');
 
+// ▼▼▼ 步骤1：在这里引入 rss-parser 库 ▼▼▼
+const Parser = require('rss-parser');
+const parser = new Parser();
+// ▲▲▲ 引入结束 ▲▲▲
+
 // --- Cloudinary 和 数据库 的配置 ---
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -89,6 +94,26 @@ async function main() {
     }
   });
 
+  // ▼▼▼ 步骤2：在这里添加 /parse-rss API 端点 ▼▼▼
+  app.get('/parse-rss', async (req, res) => {
+      const feedUrl = req.query.url;
+  
+      if (!feedUrl) {
+          return res.status(400).json({ error: 'RSS URL is required' });
+      }
+  
+      try {
+          // 使用 rss-parser 解析 URL
+          const feed = await parser.parseURL(feedUrl);
+          // 将解析后的内容以JSON格式返回给前端
+          res.json(feed);
+      } catch (error) {
+          console.error(`Error parsing RSS feed: ${feedUrl}`, error.message);
+          res.status(500).json({ error: 'Failed to parse RSS feed. Check the URL or try again later.' });
+      }
+  });
+  // ▲▲▲ API 端点添加结束 ▲▲▲
+
   const users = {};
   io.on('connection', async (socket) => {
     console.log('一个用户连接了 id:', socket.id);
@@ -111,15 +136,13 @@ async function main() {
         try {
           const result = await pool.query('INSERT INTO messages (nickname, content, message_type) VALUES ($1, $2, $3) RETURNING created_at', [socket.nickname, data.msg, data.type]);
           
-          // ▼▼▼ 关键修复：确保广播出去的字段名是 message_type ▼▼▼
           const messageToSend = {
             nickname: socket.nickname,
             msg: data.msg,
-            message_type: data.type, // 将 'type' 映射到 'message_type'
+            message_type: data.type,
             created_at: result.rows[0].created_at
           };
           io.emit('chat message', messageToSend);
-          // ▲▲▲ 修复结束 ▲▲▲
 
         } catch (err) { console.error('保存消息到数据库失败:', err); }
       }
