@@ -5,7 +5,7 @@ html {
 
 body {
     background: #008080;
-    /* font-family 由 98.css 提供 */
+    font-family: 'VT323', monospace; /* 全局使用像素字体 */
     font-size: 16px;
     color: #000;
     height: 100%;
@@ -29,7 +29,7 @@ body {
     display: block;
 }
 
-/* --- 桌面图标 (自定义，保留)--- */
+/* --- 桌面图标 --- */
 .desktop-icon {
     display: flex;
     flex-direction: column;
@@ -50,7 +50,7 @@ body {
     color: #fff;
     padding: 1px 3px;
     text-shadow: 1px 1px 1px #000;
-    font-family: 'VT323', monospace;
+    font-family: 'VT323', monospace; /* 确保桌面图标字体是像素风格 */
 }
 
 .desktop-icon:hover span, .desktop-icon:focus span {
@@ -60,24 +60,25 @@ body {
 }
 
 
-/* --- 任务栏样式 (自定义，保留) --- */
+/* --- 任务栏样式 --- */
 #taskbar {
     width: 100%;
-    /* height: 32px; */ /* 由内容决定高度 */
+    height: 32px;
     background: #c0c0c0;
     border-top: 2px solid #ffffff;
     box-sizing: border-box;
     display: flex;
     align-items: center;
-    padding: 2px;
+    padding: 0 2px;
     position: relative;
 }
 
 #start-button {
-    /* 98.css 会处理按钮样式, 这里只保留布局 */
-    margin-right: 4px;
+    height: 26px;
+    padding: 2px 6px;
     display: flex;
     align-items: center;
+    box-shadow: 1px 1px 0 #000;
 }
 
 #start-button img {
@@ -94,16 +95,15 @@ body {
 #system-tray {
     position: absolute;
     right: 4px;
-    top: 50%;
-    transform: translateY(-50%);
-    /* 使用 98.css 的样式 */
-    padding: 2px 4px; 
+    top: 4px;
+    border: 1px solid;
+    border-color: #808080 #fff #fff #808080;
+    padding: 2px 8px;
+    height: 20px;
+    line-height: 20px;
 }
 
-
-/* 
---- Win95窗口样式 (这些由 98.css 接管，所以注释掉) ---
-
+/* --- Win95窗口样式 (我们自己的版本) --- */
 .window {
     background: #c0c0c0;
     border: 1px solid;
@@ -112,24 +112,69 @@ body {
     border-right-color: #000000;
     border-bottom-color: #000000;
     box-shadow: 1px 1px 0 #000, 2px 2px 0 #000;
-}
-
-.title-bar { ... }
-.title-bar-text { ... }
-.title-bar-controls { ... }
-.button-control { ... }
-.window-body { ... }
-*/
-
-/* 保留窗口的定位和大小控制 */
-.window {
     width: 90%;
     max-width: 500px;
+    
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 10;
+}
+
+.title-bar {
+    background: linear-gradient(to right, #000080, #1084d0);
+    color: #ffffff;
+    padding: 3px 80px 3px 4px;
+    font-weight: bold;
+    text-shadow: 1px 1px #000000;
+    height: 26px;
+    box-sizing: border-box;
+    position: relative;
+    user-select: none;
+}
+
+.title-bar-text {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 20px;
+    padding-left: 2px;
+}
+
+.title-bar-controls {
+    position: absolute !important;
+    top: 3px !important;
+    right: 3px !important;
+    display: flex !important;
+}
+
+.button-control {
+    box-sizing: border-box !important;
+    width: 20px !important;
+    height: 20px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    margin-left: 2px !important;
+    font-family: Arial, sans-serif !important;
+    font-size: 14px !important;
+    font-weight: bold !important;
+    line-height: 18px !important; 
+    text-align: center !important;
+    overflow: hidden !important; 
+    background: #c0c0c0;
+    border: 1px solid;
+    border-top-color: #fff;
+    border-left-color: #fff;
+    border-right-color: #000;
+    border-bottom-color: #000;
+    cursor: pointer;
+}
+
+.window-body {
+    padding: 20px;
+    text-align: center;
 }
 
 .window-body h1 {
@@ -147,34 +192,64 @@ body {
     font-weight: bold;
 }
 
-
-/* 
---- 按钮和输入框 (这些由 98.css 接管，所以注释掉) ---
-
+/* --- 按钮和输入框 (我们自己的版本) --- */
 input[type="password"],
 input[type="text"],
-#input { ... }
-input:focus { ... }
-button { ... }
-button:active { ... }
-*/
+#input {
+    width: 90%;
+    padding: 5px;
+    border: 2px solid;
+    border-top-color: #000000;
+    border-left-color: #000000;
+    border-right-color: #ffffff;
+    border-bottom-color: #ffffff;
+    background: #ffffff;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+}
 
-/* --- 聊天窗口 (保留自定义布局) --- */
+input:focus {
+    outline: none;
+}
+
+button {
+    padding: 8px 20px;
+    background: #c0c0c0;
+    border: 1px solid;
+    border-top-color: #fff;
+    border-left-color: #fff;
+    border-right-color: #000;
+    border-bottom-color: #000;
+    box-shadow: 1px 1px 0 #000;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:active {
+    border-top-color: #000;
+    border-left-color: #000;
+    border-right-color: #fff;
+    border-bottom-color: #fff;
+    box-shadow: none;
+    transform: translate(1px, 1px);
+}
+
+/* --- 聊天窗口 --- */
 .chat-window {
     max-width: 700px;
 }
 
 .chat-container {
     display: flex;
-    /* .window-body 已经有 padding，这里可以减少或移除 */
-    padding: 0; 
+    padding: 10px;
 }
 
 #users-list-container {
     width: 150px;
     padding-right: 10px;
+    border-right: 2px solid #808080;
     margin-right: 10px;
-    border-right: 2px groove threedface;
 }
 
 #users-list-container p {
@@ -215,13 +290,17 @@ button:active { ... }
 #messages {
     flex-grow: 1;
     height: 300px;
-    /* 使用 98.css 的 sun-ken-pane 样式 */
+    background: #fff;
     padding: 10px;
     overflow-y: scroll;
+    border: 2px solid;
+    border-top-color: #000;
+    border-left-color: #000;
+    border-right-color: #fff;
+    border-bottom-color: #fff;
     margin-bottom: 10px;
     line-height: 1.4;
     text-align: left;
-    background: white;
 }
 
 #messages .system-message {
@@ -239,10 +318,13 @@ button:active { ... }
 
 #input {
     width: 100%;
+    margin: 0;
     margin-right: 10px;
 }
 
-/* #send-btn { ... } */ /* 由 98.css 统一处理 */
+#send-btn {
+    width: 80px;
+}
 
 .timestamp {
     color: #808080;
@@ -250,27 +332,38 @@ button:active { ... }
     font-size: 14px;
 }
 
-/* --- 工具栏和表情面板 (自定义，保留) --- */
+/* --- 工具栏和表情面板 --- */
 .toolbar {
     position: relative;
-    border-top: 1px solid #808080;
-    border-bottom: 1px solid #808080;
+    border-top: 2px solid #808080;
     padding: 2px;
-    margin-bottom: 4px;
     display: flex;
     gap: 2px;
 }
-/* .toolbar-btn 由 98.css 统一处理 */
+
+.toolbar-btn {
+    width: auto;
+    height: 28px;
+    padding: 0 8px;
+    font-size: 16px;
+    line-height: 28px;
+}
 
 .emoji-panel {
     position: absolute;
     bottom: 100%;
     left: 0;
-    /* 使用 98.css 窗口样式 */
+    background: #c0c0c0;
+    border: 1px solid;
+    border-top-color: #ffffff;
+    border-left-color: #ffffff;
+    border-right-color: #000000;
+    border-bottom-color: #000000;
     padding: 5px;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
     gap: 5px;
+    box-shadow: 1px 1px 0 #000;
     width: 100%;
     box-sizing: border-box;
 }
@@ -283,6 +376,7 @@ button:active { ... }
     padding: 5px;
     text-align: center;
     cursor: pointer;
+    border: 1px solid transparent;
     font-size: 14px;
     white-space: nowrap;
     overflow: hidden;
@@ -290,11 +384,11 @@ button:active { ... }
 }
 
 .emoji-item:hover {
-    background: #000080;
-    color: white;
+    border-color: #000080;
+    background: #e0e0e0;
 }
 
-/* --- 聊天图片样式 (自定义，保留) --- */
+/* --- 聊天图片样式 --- */
 .chat-image {
     max-width: 200px;
     max-height: 150px;
@@ -310,7 +404,7 @@ button:active { ... }
     border-color: #000080;
 }
 
-/* --- 图片模态框样式 (自定义，保留) --- */
+/* --- 图片模态框样式 --- */
 .modal {
     display: none;
     position: fixed;
@@ -339,7 +433,11 @@ button:active { ... }
     display: block;
     max-width: 90%;
     max-height: 90vh;
-    border: 2px outset white;
+    border: 2px solid;
+    border-top-color: #ffffff;
+    border-left-color: #ffffff;
+    border-right-color: #000000;
+    border-bottom-color: #000000;
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
     transform: scale(0.7);
     transition: transform 0.3s ease;
@@ -367,7 +465,7 @@ button:active { ... }
     text-decoration: none;
 }
 
-/* --- 查询窗口样式 (自定义布局，保留) --- */
+/* --- 查询窗口样式 --- */
 #search-window {
     z-index: 20;
     max-width: 600px;
@@ -379,6 +477,8 @@ button:active { ... }
 }
 
 .search-controls {
+    border: 2px inset #c0c0c0;
+    padding: 10px;
     margin-bottom: 10px;
 }
 
@@ -399,12 +499,31 @@ button:active { ... }
 .control-group select {
     flex-grow: 1;
 }
-/* select 样式由 98.css 接管 */
+
+.control-group select {
+    background: #fff;
+    border: 1px solid #808080;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    height: 30px;
+}
+
+#execute-search-btn {
+    display: block;
+    margin: 10px auto 0;
+}
 
 .search-results-container {
     height: 300px;
+    background: #fff;
     padding: 10px;
     overflow-y: scroll;
+    border: 2px solid;
+    border-top-color: #000;
+    border-left-color: #000;
+    border-right-color: #fff;
+    border-bottom-color: #fff;
+    line-height: 1.4;
 }
 
 #search-results .message-item {
