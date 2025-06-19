@@ -1,6 +1,6 @@
-// server.js (已修正数据库 INSERT 错误)
+// server.js (已增强RSS解析逻辑)
 
-require('dotenv').config(); // Load environment variables from .env file
+require('dotenv').config();
 
 const express = require('express');
 const http = require('http');
@@ -44,12 +44,11 @@ const upload = multer({ storage: storage });
 async function initializeDatabase() {
   try {
     const client = await pool.connect();
-    // 修正：确保数据库表的列名是 content
     await client.query(`
       CREATE TABLE IF NOT EXISTS messages (
         id SERIAL PRIMARY KEY,
         nickname VARCHAR(100) NOT NULL,
-        content TEXT NOT NULL, 
+        content TEXT NOT NULL,
         message_type VARCHAR(10) DEFAULT 'text',
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
@@ -79,9 +78,55 @@ app.post('/upload', upload.single('image'), (req, res) => {
     streamifier.createReadStream(req.file.buffer).pipe(cld_upload_stream);
 });
 
+// ▼▼▼ 核心修改点：重写 /parse-rss 接口，使其更健壮 ▼▼▼
 app.get('/parse-rss', (req, res) => {
-    // ... RSS logic remains the same ...
+    const feedUrl = req.query.url;
+    if (!feedUrl) {
+        return res.status(400).json({ error: 'RSS URL is required' });
+    }
+
+    const protocol = feedUrl.startsWith('https') ? https : http;
+
+    protocol.get(feedUrl, (response) => {
+        if (response.statusCode !== 200) {
+            return res.status(response.statusCode).json({ error: `Request Failed. Status Code: ${response.statusCode}` });
+        }
+
+        const chunks = [];
+        response.on('data', (chunk) => { chunks.push(chunk); });
+
+        response.on('end', async () => {
+            const buffer = Buffer.concat(chunks);
+            let feed;
+
+            // 策略1：首先尝试用UTF-8解析
+            try {
+                const xmlString = buffer.toString('utf8');
+                feed = await parser.parseString(xmlString);
+                console.log(`Successfully parsed ${feedUrl} with UTF-8.`);
+                return res.json(feed);
+            } catch (utf8Error) {
+                console.log(`UTF-8 parsing failed for ${feedUrl}. Trying GBK/GB2312...`);
+                
+                // 策略2：如果UTF-8失败，再尝试用GBK/GB2312解析
+                try {
+                    const xmlString = iconv.decode(buffer, 'gb2312');
+                    feed = await parser.parseString(xmlString);
+                    console.log(`Successfully parsed ${feedUrl} with GBK/GB2312.`);
+                    return res.json(feed);
+                } catch (gbkError) {
+                    console.error(`Failed to parse ${feedUrl} with both UTF-8 and GBK encodings.`, { utf8Error, gbkError });
+                    return res.status(500).json({ error: 'Failed to parse RSS feed. The format might be invalid or use an unsupported encoding.' });
+                }
+            }
+        });
+
+    }).on('error', (e) => {
+        console.error(`Error fetching RSS feed from URL: ${feedUrl}`, e);
+        res.status(500).json({ error: 'Could not fetch the RSS feed from the URL.' });
+    });
 });
+// ▲▲▲ 核心修改点结束 ▲▲▲
 
 
 // --- Socket.IO Connection Logic ---
@@ -89,7 +134,6 @@ const users = {};
 io.on('connection', async (socket) => {
     console.log('User connected:', socket.id);
     try {
-        // SELECT query is correct because it uses an alias
         const result = await pool.query('SELECT nickname, content AS msg, message_type, created_at FROM messages ORDER BY created_at DESC LIMIT 50');
         socket.emit('load history', result.rows.reverse());
     } catch (err) { console.error('Failed to read history:', err); }
@@ -106,18 +150,11 @@ io.on('connection', async (socket) => {
     socket.on('chat message', async (data) => {
       if (socket.nickname && data.msg) {
         try {
-          // ▼▼▼ 核心错误修正点 ▼▼▼
-          // 将 INSERT 查询中的列名从 'msg' 改为 'content'，以匹配数据库表结构
-          const result = await pool.query(
-              'INSERT INTO messages (nickname, content, message_type) VALUES ($1, $2, $3) RETURNING created_at', 
-              [socket.nickname, data.msg, data.type]
-          );
-          // ▲▲▲ 核心错误修正点 ▲▲▲
-          
+          const result = await pool.query('INSERT INTO messages (nickname, content, message_type) VALUES ($1, $2, $3) RETURNING created_at', [socket.nickname, data.msg, data.type]);
           const messageToSend = { nickname: socket.nickname, msg: data.msg, message_type: data.type, created_at: result.rows[0].created_at };
           io.emit('chat message', messageToSend);
         } catch (err) { 
-            console.error('Failed to save message:', err); // 错误会在这里打印
+            console.error('Failed to save message:', err);
         }
       }
     });
