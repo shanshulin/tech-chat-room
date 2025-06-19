@@ -746,3 +746,9 @@ body.dragging-active {
     line-height: 20px;
     min-width: 100px;
 }
+
+/* ▼▼▼ 新增的修复规则 ▼▼▼ */
+.window-body button {
+    align-self: center; /* 阻止按钮被flexbox拉伸，并使其水平居中 */
+    margin-top: 15px;   /* 增加按钮与上方元素的间距 */
+}
