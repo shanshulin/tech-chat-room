@@ -1,3 +1,4 @@
+// client.js (完整修复版)
 document.addEventListener('DOMContentLoaded', () => {
     // 强制隐藏所有窗口，防止启动时全部显示
     document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
@@ -260,6 +261,23 @@ document.addEventListener('DOMContentLoaded', () => {
     input.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendMessage(); });
     imageBtn.addEventListener('click', () => imageUploadInput.click());
     imageUploadInput.addEventListener('change', (event) => { const file = event.target.files[0]; if (file) uploadImage(file); event.target.value = ''; });
+    
+    // ▼▼▼ 新增的粘贴图片处理逻辑 ▼▼▼
+    input.addEventListener('paste', (e) => {
+        const items = (e.clipboardData || window.clipboardData).items;
+        for (const item of items) {
+            if (item.kind === 'file' && item.type.startsWith('image/')) {
+                e.preventDefault(); // 阻止浏览器默认的粘贴行为 (比如粘贴文件路径)
+                const file = item.getAsFile();
+                if (file) {
+                    uploadImage(file); // 调用您已有的上传函数
+                }
+                return; // 只处理找到的第一个图片文件
+            }
+        }
+    });
+    // ▲▲▲ 新增的粘贴图片处理逻辑 ▲▲▲
+
     emojiBtn.addEventListener('click', (e) => { e.stopPropagation(); emojiPanel.classList.toggle('hidden'); });
     document.addEventListener('click', (e) => { if (!emojiPanel.contains(e.target)) emojiPanel.classList.add('hidden'); });
     if(modalCloseBtn) modalCloseBtn.addEventListener('click', () => imageModal.classList.remove('active'));
