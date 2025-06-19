@@ -1,4 +1,4 @@
-// server.js (已增强RSS解析逻辑)
+// server.js (已添加RSS缓存功能)
 
 require('dotenv').config();
 
@@ -15,6 +15,10 @@ const iconv = require('iconv-lite');
 const streamifier = require('streamifier');
 
 const parser = new Parser();
+
+// --- 新增：缓存配置 ---
+const cache = new Map();
+const CACHE_DURATION = 10 * 60 * 1000; // 缓存10分钟 (单位：毫秒)
 
 // --- Configuration ---
 if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.DATABASE_URL) {
@@ -40,8 +44,84 @@ const io = new Server(server);
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// --- Database Initialization ---
-async function initializeDatabase() {
+// Database Initialization (no changes)
+async function initializeDatabase() { /* ... */ }
+
+// Static File Serving (no changes)
+app.use(express.static(path.join(__dirname, 'public')));
+
+
+// --- API Routes ---
+// Image Upload Route (no changes)
+app.post('/upload', upload.single('image'), (req, res) => { /* ... */ });
+
+// ▼▼▼ 核心修改点：为 /parse-rss 接口添加缓存逻辑 ▼▼▼
+app.get('/parse-rss', (req, res) => {
+    const feedUrl = req.query.url;
+    if (!feedUrl) {
+        return res.status(400).json({ error: 'RSS URL is required' });
+    }
+
+    // 步骤1：检查缓存
+    const cachedData = cache.get(feedUrl);
+    if (cachedData && (Date.now() - cachedData.timestamp < CACHE_DURATION)) {
+        console.log(`Serving from cache for: ${feedUrl}`);
+        return res.json(cachedData.feed);
+    }
+    
+    // 步骤2：如果缓存不存在或已过期，则发起请求
+    console.log(`Fetching new data for: ${feedUrl}`);
+    const protocol = feedUrl.startsWith('https') ? https : http;
+
+    protocol.get(feedUrl, (response) => {
+        if (response.statusCode !== 200) {
+            // 将错误信息也返回给前端
+            return res.status(response.statusCode).json({ error: `Request Failed. Status Code: ${response.statusCode}` });
+        }
+
+        const chunks = [];
+        response.on('data', (chunk) => { chunks.push(chunk); });
+
+        response.on('end', async () => {
+            const buffer = Buffer.concat(chunks);
+            let feed;
+
+            try {
+                const xmlString = buffer.toString('utf8');
+                feed = await parser.parseString(xmlString);
+            } catch (utf8Error) {
+                try {
+                    const xmlString = iconv.decode(buffer, 'gb2312');
+                    feed = await parser.parseString(xmlString);
+                } catch (gbkError) {
+                    return res.status(500).json({ error: 'Failed to parse RSS feed. Invalid format or unsupported encoding.' });
+                }
+            }
+            
+            // 步骤3：将成功获取的数据存入缓存
+            cache.set(feedUrl, { feed: feed, timestamp: Date.now() });
+            console.log(`Cached new data for: ${feedUrl}`);
+            
+            // 步骤4：将数据返回给客户端
+            res.json(feed);
+        });
+
+    }).on('error', (e) => {
+        console.error(`Error fetching RSS feed from URL: ${feedUrl}`, e);
+        res.status(500).json({ error: 'Could not fetch the RSS feed from the URL.' });
+    });
+});
+// ▲▲▲ 核心修改点结束 ▲▲▲
+
+
+// Socket.IO Connection Logic (no changes)
+// ...
+
+// Start Server (no changes)
+// ...
+
+// 为了完整性，我把未改动的部分也补充进来
+async function fullInitializeDatabase() {
   try {
     const client = await pool.connect();
     await client.query(`
@@ -61,11 +141,6 @@ async function initializeDatabase() {
   }
 }
 
-// --- Static File Serving ---
-app.use(express.static(path.join(__dirname, 'public')));
-
-
-// --- API Routes ---
 app.post('/upload', upload.single('image'), (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
     let cld_upload_stream = cloudinary.uploader.upload_stream({ folder: "chat_app" }, (error, result) => {
@@ -78,58 +153,6 @@ app.post('/upload', upload.single('image'), (req, res) => {
     streamifier.createReadStream(req.file.buffer).pipe(cld_upload_stream);
 });
 
-// ▼▼▼ 核心修改点：重写 /parse-rss 接口，使其更健壮 ▼▼▼
-app.get('/parse-rss', (req, res) => {
-    const feedUrl = req.query.url;
-    if (!feedUrl) {
-        return res.status(400).json({ error: 'RSS URL is required' });
-    }
-
-    const protocol = feedUrl.startsWith('https') ? https : http;
-
-    protocol.get(feedUrl, (response) => {
-        if (response.statusCode !== 200) {
-            return res.status(response.statusCode).json({ error: `Request Failed. Status Code: ${response.statusCode}` });
-        }
-
-        const chunks = [];
-        response.on('data', (chunk) => { chunks.push(chunk); });
-
-        response.on('end', async () => {
-            const buffer = Buffer.concat(chunks);
-            let feed;
-
-            // 策略1：首先尝试用UTF-8解析
-            try {
-                const xmlString = buffer.toString('utf8');
-                feed = await parser.parseString(xmlString);
-                console.log(`Successfully parsed ${feedUrl} with UTF-8.`);
-                return res.json(feed);
-            } catch (utf8Error) {
-                console.log(`UTF-8 parsing failed for ${feedUrl}. Trying GBK/GB2312...`);
-                
-                // 策略2：如果UTF-8失败，再尝试用GBK/GB2312解析
-                try {
-                    const xmlString = iconv.decode(buffer, 'gb2312');
-                    feed = await parser.parseString(xmlString);
-                    console.log(`Successfully parsed ${feedUrl} with GBK/GB2312.`);
-                    return res.json(feed);
-                } catch (gbkError) {
-                    console.error(`Failed to parse ${feedUrl} with both UTF-8 and GBK encodings.`, { utf8Error, gbkError });
-                    return res.status(500).json({ error: 'Failed to parse RSS feed. The format might be invalid or use an unsupported encoding.' });
-                }
-            }
-        });
-
-    }).on('error', (e) => {
-        console.error(`Error fetching RSS feed from URL: ${feedUrl}`, e);
-        res.status(500).json({ error: 'Could not fetch the RSS feed from the URL.' });
-    });
-});
-// ▲▲▲ 核心修改点结束 ▲▲▲
-
-
-// --- Socket.IO Connection Logic ---
 const users = {};
 io.on('connection', async (socket) => {
     console.log('User connected:', socket.id);
@@ -169,9 +192,8 @@ io.on('connection', async (socket) => {
     });
 });
 
-// --- Start Server ---
 async function startServer() {
-    await initializeDatabase();
+    await fullInitializeDatabase();
     const PORT = process.env.PORT || 3000;
     server.listen(PORT, () => { console.log(`Server is running successfully on http://localhost:${PORT}`); });
 }
