@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- DOM 元素 ---
+    // --- DOM 元素 (保持不变) ---
     const chatAppIcon = document.getElementById('chat-app-icon');
     const clockElement = document.getElementById('clock');
     const screens = { login: document.getElementById('login-screen'), nickname: document.getElementById('nickname-screen'), chat: document.getElementById('chat-screen'), search: document.getElementById('search-window') };
@@ -37,12 +37,59 @@ document.addEventListener('DOMContentLoaded', () => {
     const maximizeBtn = document.getElementById('maximize-btn');
     const taskbarApps = document.getElementById('taskbar-apps');
 
-    // --- 状态变量 ---
+    // --- 状态变量 (保持不变) ---
     const socket = io({ reconnection: true, reconnectionDelay: 1000, reconnectionDelayMax: 5000, reconnectionAttempts: Infinity });
     let myNickname = sessionStorage.getItem('nickname') || '';
     const KAOMOJI_MAP = { ':happy:': '(^▽^)', ':lol:': 'o(>▽<)o', ':love:': '(｡♥‿♥｡)', ':excited:': '(*^▽^*)', ':proud:': '(´_ゝ`)', ':sad:': '(T_T)', ':cry:': '(；′⌒`)', ':sob:': '༼ಢ_ಢ༽', ':wow:': 'Σ(°ロ°)', ':speechless:': '(－_－) zzZ', ':confused:': '(°_°)?', ':wave:': '(^_^)/', ':ok:': 'd(^_^o)', ':sorry:': 'm(_ _)m', ':run:': 'ε=ε=┌( >_<)┘', ':tableflip:': '(╯°□°）╯︵ ┻━┻', ':cat:': '(=^ェ^=)', ':bear:': 'ʕ •ᴥ•ʔ', ':note:': 'ヾ( ´ A ` )ﾉ', ':sleepy:': '(´-ω-`)' };
 
-    // --- 核心功能函数 ---
+    // ▼▼▼ 新增：窗口拖拽功能的核心函数 ▼▼▼
+    function makeDraggable(windowElement) {
+        const titleBar = windowElement.querySelector('.title-bar');
+        if (!titleBar) return;
+
+        let isDragging = false;
+        let offsetX, offsetY;
+
+        titleBar.addEventListener('mousedown', (e) => {
+            // 如果窗口已最大化，则不允许拖拽
+            if (windowElement.classList.contains('maximized')) {
+                return;
+            }
+
+            isDragging = true;
+            // 计算鼠标点击位置相对于窗口左上角的偏移量
+            offsetX = e.clientX - windowElement.offsetLeft;
+            offsetY = e.clientY - windowElement.offsetTop;
+
+            // 在拖拽期间，临时移除 transform 以便 top/left 定位生效
+            windowElement.style.transform = 'none';
+            document.body.classList.add('dragging-active');
+
+            // 阻止默认的文本选中行为
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            // 根据鼠标位置和偏移量计算窗口新位置
+            const newX = e.clientX - offsetX;
+            const newY = e.clientY - offsetY;
+
+            windowElement.style.left = `${newX}px`;
+            windowElement.style.top = `${newY}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                document.body.classList.remove('dragging-active');
+            }
+        });
+    }
+    // ▲▲▲ 新增结束 ▲▲▲
+
+    // --- 核心功能函数 (保持不变) ---
     function switchScreen(screenName) { Object.values(screens).forEach(screen => screen.classList.remove('active')); if (screens[screenName]) screens[screenName].classList.add('active'); }
     function sendMessage() { if (input.value && !input.disabled) { socket.emit('chat message', { type: 'text', msg: input.value }); input.value = ''; input.focus(); } }
     function addSystemMessage(msg) { const item = document.createElement('div'); item.classList.add('system-message'); item.textContent = `*** ${msg} ***`; messages.appendChild(item); messages.scrollTop = messages.scrollHeight; }
@@ -51,7 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function uploadImage(file) { if (!file || !file.type.startsWith('image/')) return; addSystemMessage(`正在上传图片: ${file.name || 'clipboard_image.png'}...`); const formData = new FormData(); formData.append('image', file); try { const response = await fetch('/upload', { method: 'POST', body: formData }); if (!response.ok) throw new Error('上传失败'); const result = await response.json(); socket.emit('chat message', { type: 'image', msg: result.imageUrl }); } catch (error) { console.error('上传出错:', error); addSystemMessage(`图片上传失败。`); } }
     function populateDateSelectors() { const currentYear = new Date().getFullYear(); searchYear.innerHTML = '<option value="any">所有年份</option>'; for (let y = currentYear; y >= 2023; y--) { searchYear.innerHTML += `<option value="${y}">${y}年</option>`; } searchMonth.innerHTML = '<option value="any">所有月份</option>'; for (let m = 1; m <= 12; m++) { searchMonth.innerHTML += `<option value="${m}">${m}月</option>`; } searchDay.innerHTML = '<option value="any">所有日期</option>'; for (let d = 1; d <= 31; d++) { searchDay.innerHTML += `<option value="${d}">${d}日</option>`; } }
     function updateClock() { const now = new Date(); const hours = String(now.getHours()).padStart(2, '0'); const minutes = String(now.getMinutes()).padStart(2, '0'); clockElement.textContent = `${hours}:${minutes}`; }
-
     function openChatWindow() {
         switchScreen('chat');
         let taskbarTab = document.getElementById('chat-taskbar-tab');
@@ -60,7 +106,6 @@ document.addEventListener('DOMContentLoaded', () => {
             taskbarTab.id = 'chat-taskbar-tab';
             taskbarTab.textContent = '糯米团 v1.0 - ...';
             taskbarApps.appendChild(taskbarTab);
-
             taskbarTab.addEventListener('click', () => {
                 const isChatActive = screens.chat.classList.contains('active');
                 if (isChatActive) {
@@ -77,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
         taskbarTab.className = 'taskbar-tab active';
     }
 
-    // --- 事件绑定 ---
+    // --- 事件绑定 (保持不变) ---
     chatAppIcon.addEventListener('click', () => {
         const taskbarTab = document.getElementById('chat-taskbar-tab');
         if (taskbarTab && !screens.chat.classList.contains('active')) {
@@ -88,7 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
             switchScreen('login');
         }
     });
-
     messages.addEventListener('click', (e) => { if (e.target && e.target.classList.contains('chat-image')) { imageModal.classList.add('active'); modalImg.src = e.target.src; } });
     closeBtn.addEventListener('click', () => { imageModal.classList.remove('active'); });
     imageModal.addEventListener('click', (e) => { if (e.target === imageModal) { imageModal.classList.remove('active'); } });
@@ -98,92 +142,31 @@ document.addEventListener('DOMContentLoaded', () => {
     input.addEventListener('paste', (event) => { const items = (event.clipboardData || window.clipboardData).items; for (let i = 0; i < items.length; i++) { if (items[i].type.indexOf('image') !== -1) { event.preventDefault(); const blob = items[i].getAsFile(); if (blob) uploadImage(blob); return; } } });
     emojiBtn.addEventListener('click', (e) => { e.stopPropagation(); emojiPanel.classList.toggle('hidden'); });
     document.addEventListener('click', () => { if (!emojiPanel.classList.contains('hidden')) emojiPanel.classList.add('hidden'); });
-    
-    // ▼▼▼ 修改：密码固定为 MWNMT ▼▼▼
-    loginBtn.addEventListener('click', () => {
-        if (passwordInput.value === 'MWNMT') {
-            switchScreen('nickname');
-        } else {
-            errorMsg.textContent = '错误: 密码不正确。';
-            setTimeout(() => { errorMsg.textContent = ''; }, 3000);
-        }
-    });
-    
+    loginBtn.addEventListener('click', () => { if (passwordInput.value === 'MWNMT') { switchScreen('nickname'); } else { errorMsg.textContent = '错误: 密码不正确。'; setTimeout(() => { errorMsg.textContent = ''; }, 3000); } });
     passwordInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') loginBtn.click(); });
-    
-    nicknameBtn.addEventListener('click', () => {
-        const nickname = nicknameInput.value.trim();
-        if (nickname) {
-            myNickname = nickname;
-            sessionStorage.setItem('nickname', nickname);
-            socket.emit('join', nickname);
-            openChatWindow();
-        }
-    });
-
+    nicknameBtn.addEventListener('click', () => { const nickname = nicknameInput.value.trim(); if (nickname) { myNickname = nickname; sessionStorage.setItem('nickname', nickname); socket.emit('join', nickname); openChatWindow(); } });
     nicknameInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') nicknameBtn.click(); });
     sendBtn.addEventListener('click', sendMessage);
     input.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendMessage(); });
     searchBtn.addEventListener('click', () => { searchWindow.classList.add('active'); });
     loginCloseBtn.addEventListener('click', () => { screens.login.classList.remove('active'); });
     nicknameCloseBtn.addEventListener('click', () => { screens.nickname.classList.remove('active'); });
-    
-    chatCloseBtn.addEventListener('click', () => {
-        screens.chat.classList.remove('active');
-        const taskbarTab = document.getElementById('chat-taskbar-tab');
-        if (taskbarTab) taskbarTab.remove();
-    });
-
+    chatCloseBtn.addEventListener('click', () => { screens.chat.classList.remove('active'); const taskbarTab = document.getElementById('chat-taskbar-tab'); if (taskbarTab) taskbarTab.remove(); });
     searchCloseBtn.addEventListener('click', () => { searchWindow.classList.remove('active'); });
-    
-    minimizeBtn.addEventListener('click', () => {
-        screens.chat.classList.remove('active');
-        const taskbarTab = document.getElementById('chat-taskbar-tab');
-        if (taskbarTab) {
-            taskbarTab.classList.remove('active');
-            taskbarTab.classList.add('inactive');
-        }
-    });
-
-    maximizeBtn.addEventListener('click', () => {
-        screens.chat.classList.toggle('maximized');
-    });
-
-    executeSearchBtn.addEventListener('click', async () => { 
-        const queryParams = new URLSearchParams({
-            username: searchUsername.value.trim(),
-            keyword: searchKeyword.value.trim(),
-            year: searchYear.value,
-            month: searchMonth.value,
-            day: searchDay.value
-        });
-        searchResults.innerHTML = '正在查询中...';
-        try {
-            const response = await fetch(`/api/search?${queryParams.toString()}`);
-            if (!response.ok) throw new Error('查询失败');
-            const results = await response.json();
-            searchResults.innerHTML = '';
-            if (results.length === 0) { searchResults.innerHTML = '没有找到匹配的记录。'; } 
-            else { results.forEach(record => { const item = createChatMessageElement(record); searchResults.appendChild(item); }); }
-        } catch(err) { searchResults.innerHTML = '查询出错，请稍后再试。'; console.error('Search error:', err); }
-     });
+    minimizeBtn.addEventListener('click', () => { screens.chat.classList.remove('active'); const taskbarTab = document.getElementById('chat-taskbar-tab'); if (taskbarTab) { taskbarTab.classList.remove('active'); taskbarTab.classList.add('inactive'); } });
+    maximizeBtn.addEventListener('click', () => { screens.chat.classList.toggle('maximized'); });
+    executeSearchBtn.addEventListener('click', async () => { const queryParams = new URLSearchParams({ username: searchUsername.value.trim(), keyword: searchKeyword.value.trim(), year: searchYear.value, month: searchMonth.value, day: searchDay.value }); searchResults.innerHTML = '正在查询中...'; try { const response = await fetch(`/api/search?${queryParams.toString()}`); if (!response.ok) throw new Error('查询失败'); const results = await response.json(); searchResults.innerHTML = ''; if (results.length === 0) { searchResults.innerHTML = '没有找到匹配的记录。'; } else { results.forEach(record => { const item = createChatMessageElement(record); searchResults.appendChild(item); }); } } catch(err) { searchResults.innerHTML = '查询出错，请稍后再试。'; console.error('Search error:', err); } });
 
     // --- 初始化 ---
-    // ▼▼▼ 修改：注释掉随机密码生成逻辑 ▼▼▼
-    /*
-    if (!localStorage.getItem('chat_password')) {
-        const randomPassword = Math.random().toString(36).substring(2, 8);
-        localStorage.setItem('chat_password', randomPassword);
-        alert(`首次使用，已为您生成一个初始密码: ${randomPassword}\n请记住它，或者在 client.js 中修改。`);
-    }
-    */
+    // ▼▼▼ 新增：让所有窗口都可拖拽 ▼▼▼
+    document.querySelectorAll('.window').forEach(makeDraggable);
 
     populateDateSelectors();
     for (const code in KAOMOJI_MAP) { const kaomoji = KAOMOJI_MAP[code]; const panelItem = document.createElement('div'); panelItem.className = 'emoji-item'; panelItem.textContent = kaomoji; panelItem.title = code; panelItem.addEventListener('click', () => { input.value += ` ${code} `; input.focus(); emojiPanel.classList.add('hidden'); }); emojiPanel.appendChild(panelItem); }
     updateClock();
     setInterval(updateClock, 1000 * 30);
 
-    // --- Socket.IO 事件处理 ---
+    // --- Socket.IO 事件处理 (保持不变) ---
     socket.on('load history', (history) => { messages.innerHTML = ''; history.forEach(data => addChatMessage(data)); addSystemMessage('欢迎来到聊天室！'); });
     socket.on('chat message', (data) => addChatMessage(data));
     socket.on('system message', (msg) => addSystemMessage(msg));

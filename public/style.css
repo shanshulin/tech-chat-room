@@ -545,7 +545,6 @@ button:active {
     top: 0 !important;
     left: 0 !important;
     width: 100% !important;
-    /* ▼▼▼ 修改：修复双重减法bug ▼▼▼ */
     height: 100% !important; 
     transform: none !important;
     max-width: none !important;
@@ -560,7 +559,6 @@ button:active {
 .window.maximized #messages {
     height: 100%; /* 在最大化时，让消息区域占满剩余空间 */
 }
-
 
 /* --- 任务栏标签容器 --- */
 #taskbar-apps {
@@ -597,4 +595,14 @@ button:active {
 .taskbar-tab.inactive {
     border-color: #fff #808080 #808080 #fff;
     background: #c0c0c0;
+}
+
+/* --- 窗口拖拽样式 --- */
+.title-bar {
+    cursor: move; /* 当鼠标悬停在标题栏上时，显示移动手势 */
+}
+
+body.dragging-active {
+    cursor: move; /* 当正在拖拽时，整个页面的鼠标都显示移动手-势 */
+    user-select: none; /* 防止拖拽时选中页面上的其他文字 */
 }
