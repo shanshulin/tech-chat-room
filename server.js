@@ -5,13 +5,13 @@ const { Pool } = require('pg');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const path = require('path');
-
-// ▼▼▼ 步骤1：在这里引入 rss-parser 库 ▼▼▼
 const Parser = require('rss-parser');
+
+// 初始化RSS解析器
 const parser = new Parser();
-// ▲▲▲ 引入结束 ▲▲▲
 
 // --- Cloudinary 和 数据库 的配置 ---
+// 确保你的 .env 文件或Render环境变量中设置了这些值
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -31,6 +31,7 @@ async function main() {
   const storage = multer.memoryStorage();
   const upload = multer({ storage: storage });
 
+  // --- 数据库初始化 ---
   try {
     const client = await pool.connect();
     await client.query(`
@@ -49,11 +50,22 @@ async function main() {
     process.exit(1);
   }
 
-  app.use(express.static(path.join(__dirname, 'public')));
-  app.get('/', (req, res) => { 
-    res.sendFile(path.join(__dirname, 'public', 'index.html')); 
+  // ▼▼▼ 关键部分：正确配置静态文件服务 ▼▼▼
+  // 定义 'public' 文件夹的绝对路径
+  const publicPath = path.join(__dirname, 'public');
+  
+  // 告诉 Express，所有静态文件（如css, js, ico）都从 'public' 文件夹提供
+  app.use(express.static(publicPath));
+  
+  // 将所有未匹配到API的GET请求都重定向到 index.html
+  // 这对于单页应用（SPA）和直接访问子路径非常重要
+  app.get(/^(?!\/api\/|\/parse-rss|\/socket\.io\/).*/, (req, res) => {
+    res.sendFile(path.join(publicPath, 'index.html'));
   });
+  // ▲▲▲ 静态文件服务配置结束 ▲▲▲
 
+
+  // --- API 路由 ---
   app.post('/upload', upload.single('image'), async (req, res) => {
     if (!req.file) return res.status(400).send('No file uploaded.');
     try {
@@ -94,26 +106,21 @@ async function main() {
     }
   });
 
-  // ▼▼▼ 步骤2：在这里添加 /parse-rss API 端点 ▼▼▼
   app.get('/parse-rss', async (req, res) => {
       const feedUrl = req.query.url;
-  
       if (!feedUrl) {
           return res.status(400).json({ error: 'RSS URL is required' });
       }
-  
       try {
-          // 使用 rss-parser 解析 URL
           const feed = await parser.parseURL(feedUrl);
-          // 将解析后的内容以JSON格式返回给前端
           res.json(feed);
       } catch (error) {
           console.error(`Error parsing RSS feed: ${feedUrl}`, error.message);
           res.status(500).json({ error: 'Failed to parse RSS feed. Check the URL or try again later.' });
       }
   });
-  // ▲▲▲ API 端点添加结束 ▲▲▲
 
+  // --- Socket.IO 连接逻辑 ---
   const users = {};
   io.on('connection', async (socket) => {
     console.log('一个用户连接了 id:', socket.id);
@@ -154,6 +161,7 @@ async function main() {
             io.emit('update users', Object.values(users));
             io.emit('system message', `“${socket.nickname}”离开了聊天室`);
         }
+        console.log('一个用户断开了连接 id:', socket.id);
     });
   });
 
