@@ -80,14 +80,12 @@ body {
     box-shadow: 1px 1px 0 #000;
 }
 
-/* ▼▼▼ MODIFIED ▼▼▼ */
+/* ▼▼▼ 关键修改：调整尺寸以适应新图标 ▼▼▼ */
 #start-button img {
-    width: 22px; /* Adjusted for new icon size */
-    height: 22px; /* Adjusted for new icon size */
+    width: 22px; 
+    height: 22px;
     margin-right: 5px;
 }
-/* ▲▲▲ MODIFIED ▲▲▲ */
-
 
 #start-button strong {
     font-weight: bold;
@@ -117,26 +115,23 @@ body {
     width: 90%;
     max-width: 500px;
     
-    /* ▼▼▼ 修改：使用绝对定位让窗口出现在桌面上方 ▼▼▼ */
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 10;
-    /* ▲▲▲ 修改结束 ▲▲▲ */
 }
 
-/* ★★★ 核心修复：最终方案 ★★★ */
 .title-bar {
     background: linear-gradient(to right, #000080, #1084d0);
     color: #ffffff;
-    padding: 3px 80px 3px 4px; /* 为按钮留足空间 */
+    padding: 3px 80px 3px 4px;
     font-weight: bold;
     text-shadow: 1px 1px #000000;
     height: 26px;
     box-sizing: border-box;
     position: relative;
-    user-select: none; /* 防止拖动时选中文本 */
+    user-select: none;
 }
 
 .title-bar-text {
@@ -176,8 +171,6 @@ body {
     border-bottom-color: #000;
     cursor: pointer;
 }
-/* ★★★ 核心修复结束 ★★★ */
-
 
 .window-body {
     padding: 20px;
@@ -199,7 +192,8 @@ body {
     font-weight: bold;
 }
 
-/* --- 按钮和输入框 --- */
+/* --- 其他样式省略，与您提供的文件一致 --- */
+/* ... (以下样式保持不变) ... */
 input[type="password"],
 input[type="text"],
 #input {
@@ -242,7 +236,6 @@ button:active {
     transform: translate(1px, 1px);
 }
 
-/* --- 聊天窗口 --- */
 .chat-window {
     max-width: 700px;
 }
@@ -339,7 +332,6 @@ button:active {
     font-size: 14px;
 }
 
-/* --- 工具栏和表情面板 --- */
 .toolbar {
     position: relative;
     border-top: 2px solid #808080;
@@ -395,7 +387,6 @@ button:active {
     background: #e0e0e0;
 }
 
-/* --- 聊天图片样式 --- */
 .chat-image {
     max-width: 200px;
     max-height: 150px;
@@ -411,7 +402,6 @@ button:active {
     border-color: #000080;
 }
 
-/* --- 图片模态框样式 --- */
 .modal {
     display: none;
     position: fixed;
@@ -472,11 +462,9 @@ button:active {
     text-decoration: none;
 }
 
-/* --- 查询窗口样式 --- */
 #search-window {
     position: absolute;
-    /* top, left, transform are already defined in .window */
-    z-index: 20; /* 比普通窗口更高 */
+    z-index: 20;
     max-width: 600px;
 }
 
