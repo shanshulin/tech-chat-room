@@ -50,6 +50,7 @@ body {
     color: #fff;
     padding: 1px 3px;
     text-shadow: 1px 1px 1px #000;
+    font-family: 'VT323', monospace;
 }
 
 .desktop-icon:hover span, .desktop-icon:focus span {
