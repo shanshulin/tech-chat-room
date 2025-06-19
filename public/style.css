@@ -22,12 +22,15 @@ body {
     padding: 10px;
 }
 
+/* ▼▼▼ 核心修复：默认隐藏所有 .screen 窗口 ▼▼▼ */
 .screen {
     display: none;
 }
 .screen.active {
-    display: block;
+    display: flex; /* 使用 flex 替代 block 以便内部布局生效 */
 }
+/* ▲▲▲ 修复结束 ▲▲▲ */
+
 
 /* --- 桌面图标 --- */
 .desktop-icon {
@@ -120,7 +123,8 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 10;
-    display: flex;
+    
+    /* 修改：使用flex布局来管理窗口内部结构 */
     flex-direction: column;
 }
 
@@ -134,7 +138,7 @@ body {
     box-sizing: border-box;
     position: relative;
     user-select: none;
-    flex-shrink: 0;
+    flex-shrink: 0; /* 防止标题栏被压缩 */
 }
 
 .title-bar-text {
@@ -176,9 +180,14 @@ body {
 }
 
 .window-body {
-    padding: 20px;
+    padding: 10px;
     text-align: center;
+    flex-grow: 1; /* 让窗口主体部分可以自动伸展 */
+    overflow-y: auto; /* 如果内容太多，允许滚动 */
+    display: flex; /* 让内部元素也能更好地布局 */
+    flex-direction: column;
 }
+
 
 .window-body h1 {
     font-size: 1.2em;
@@ -245,13 +254,13 @@ button:active {
 
 .chat-container {
     display: flex;
-    padding: 10px;
+    padding: 0;
     flex-grow: 1;
 }
 
 #users-list-container {
     width: 150px;
-    padding-right: 10px;
+    padding: 10px;
     border-right: 2px solid #808080;
     margin-right: 10px;
 }
@@ -410,7 +419,7 @@ button:active {
 
 /* --- 图片模态框样式 --- */
 .modal {
-    display: none;
+    display: none; /* 默认隐藏 */
     position: fixed;
     z-index: 1000;
     left: 0;
@@ -451,7 +460,7 @@ button:active {
     transform: scale(1);
 }
 
-.close-btn {
+.modal-close-btn { /* 统一类名 */
     position: absolute;
     top: 15px;
     right: 35px;
@@ -463,8 +472,8 @@ button:active {
     text-shadow: 1px 1px 2px #000;
 }
 
-.close-btn:hover,
-.close-btn:focus {
+.modal-close-btn:hover,
+.modal-close-btn:focus {
     color: #bbb;
     text-decoration: none;
 }
@@ -475,7 +484,7 @@ button:active {
     max-width: 600px;
 }
 
-.search-window-body {
+#search-window .window-body {
     padding: 10px;
     text-align: left;
 }
@@ -558,11 +567,11 @@ button:active {
 
 .window.maximized .chat-container,
 #rss-reader-screen.maximized .rss-main-content {
-    height: calc(100% - 36px); /* 100% 高度减去标题栏和padding */
+    height: 100%;
 }
 
 .window.maximized #messages {
-    height: 100%; /* 在最大化时，让消息区域占满剩余空间 */
+    height: 100%;
 }
 
 /* --- 任务栏标签容器 --- */
@@ -604,12 +613,12 @@ button:active {
 
 /* --- 窗口拖拽样式 --- */
 .title-bar {
-    cursor: move; /* 当鼠标悬停在标题栏上时，显示移动手势 */
+    cursor: move;
 }
 
 body.dragging-active {
-    cursor: move; /* 当正在拖拽时，整个页面的鼠标都显示移动手-势 */
-    user-select: none; /* 防止拖拽时选中页面上的其他文字 */
+    cursor: move;
+    user-select: none;
 }
 
 /* --- Netscape风格的RSS阅读器样式 --- */
@@ -622,17 +631,14 @@ body.dragging-active {
     border-bottom: 1px solid #808080;
     flex-shrink: 0;
 }
-
 .menu-bar li {
     padding: 2px 6px;
     cursor: default;
 }
-
 .menu-bar li:hover {
     background: #000080;
     color: white;
 }
-
 .rss-toolbar, .location-bar {
     display: flex;
     padding: 5px;
@@ -641,11 +647,9 @@ body.dragging-active {
     border-bottom: 1px solid #808080;
     flex-shrink: 0;
 }
-
 .rss-toolbar button, .location-bar button {
     padding: 4px 12px;
 }
-
 .location-bar label {
     font-weight: bold;
 }
@@ -653,7 +657,6 @@ body.dragging-active {
     flex-grow: 1;
     width: auto;
 }
-
 .rss-main-content {
     display: flex;
     flex-grow: 1;
@@ -661,7 +664,6 @@ body.dragging-active {
     gap: 10px;
     overflow: hidden;
 }
-
 .sunken-panel {
     background: white;
     border: 2px solid;
@@ -669,7 +671,6 @@ body.dragging-active {
     padding: 10px;
     overflow-y: auto;
 }
-
 #rss-bookmarks-panel {
     width: 200px;
     flex-shrink: 0;
@@ -699,24 +700,20 @@ body.dragging-active {
     background: #000080;
     color: white;
 }
-
 #rss-content {
     flex-grow: 1;
     text-align: left;
 }
-
 #rss-content h2 {
     margin: 0 0 10px;
     font-size: 1.2em;
     padding-bottom: 5px;
     border-bottom: 1px solid #808080;
 }
-
 #rss-content a {
     color: #0000ff;
     text-decoration: underline;
 }
-
 #rss-content .rss-item {
     border-bottom: 1px dotted #ccc;
     padding-bottom: 10px;
@@ -731,18 +728,16 @@ body.dragging-active {
 }
 #rss-content .rss-item p {
     margin: 5px 0 0;
-    font-size: 15px; /* 调大一点像素字体 */
+    font-size: 15px;
     color: #333;
     line-height: 1.5;
 }
-
 .status-bar {
     display: flex;
     border-top: 1px solid #808080;
     padding: 2px 4px;
     flex-shrink: 0;
 }
-
 .status-bar-field {
     border: 1px solid;
     border-color: #808080 #fff #fff #808080;
