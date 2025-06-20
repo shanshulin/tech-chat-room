@@ -1,10 +1,12 @@
-// server.js (最终版 - 带联网开关)
+// server.js (最终洁净版)
 
 require('dotenv').config();
 
 const express = require('express');
 const http = require('http');
-const https = require('https-proxy-agent');
+// ▼▼▼ 删除: 不再需要 https-proxy-agent ▼▼▼
+// const https = require('https-proxy-agent'); 
+// ▲▲▲ 删除结束 ▲▲▲
 const { Server } = require('socket.io');
 const { Pool } = require('pg');
 const multer = require('multer');
@@ -37,7 +39,25 @@ async function initializeDatabase() { try { const client = await pool.connect();
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.post('/upload', upload.single('image'), (req, res) => { if (!req.file) { return res.status(400).json({ error: 'No file uploaded.' }); } let cld_upload_stream = cloudinary.uploader.upload_stream({ folder: "chat_app" }, (error, result) => { if (error) { console.error('Cloudinary upload error:', error); return res.status(500).json({ error: 'Failed to upload image.' }); } res.status(200).json({ imageUrl: result.secure_url }); }); streamifier.createReadStream(req.file.buffer).pipe(cld_upload_stream); });
-app.get('/parse-rss', (req, res) => { const feedUrl = req.query.url; if (!feedUrl) { return res.status(400).json({ error: 'RSS URL is required' }); } const cachedData = new Map().get(feedUrl); if (cachedData && (Date.now() - cachedData.timestamp < (10*60*1000))) { return res.json(cachedData.feed); } const protocol = feedUrl.startsWith('https') ? https.globalAgent.protocol.slice(0, -1) : http.globalAgent.protocol.slice(0, -1); const options = { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0' } }; const request = require(protocol).get(feedUrl, options, (response) => { if (response.statusCode !== 200) { return res.status(response.statusCode).json({ error: `Request Failed. Status Code: ${response.statusCode}` }); } const chunks = []; response.on('data', (chunk) => { chunks.push(chunk); }); response.on('end', async () => { const buffer = Buffer.concat(chunks); let feed; try { feed = await parser.parseString(buffer.toString('utf8')); } catch (e) { try { feed = await parser.parseString(iconv.decode(buffer, 'gb2312')); } catch (e2) { return res.status(500).json({ error: 'Failed to parse RSS feed.' }); } } new Map().set(feedUrl, { feed: feed, timestamp: Date.now() }); res.json(feed); }); }); request.on('timeout', () => { request.destroy(); res.status(504).json({ error: 'Gateway Timeout' }); }); request.on('error', (e) => { res.status(502).json({ error: 'Bad Gateway' }); }); });
+app.get('/parse-rss', async (req, res) => { // ▼▼▼ 修改: 简化RSS获取逻辑，不再需要单独处理http/https ▼▼▼
+    const feedUrl = req.query.url;
+    if (!feedUrl) { return res.status(400).json({ error: 'RSS URL is required' }); }
+    try {
+        const feed = await parser.parseURL(feedUrl);
+        res.json(feed);
+    } catch (error) {
+        console.error(`Failed to parse RSS feed from ${feedUrl}:`, error);
+        // 尝试用 iconv-lite 解码 gb2312
+        try {
+            const response = await axios.get(feedUrl, { responseType: 'arraybuffer' });
+            const decodedBody = iconv.decode(response.data, 'gb2312');
+            const feed = await parser.parseString(decodedBody);
+            res.json(feed);
+        } catch (gbkError) {
+             res.status(500).json({ error: 'Failed to parse RSS feed with standard and fallback encodings.' });
+        }
+    }
+}); // ▲▲▲ 修改结束 ▲▲▲
 
 
 // 智能代理核心：定义通用的Google搜索工具 (保持不变)
@@ -45,20 +65,12 @@ const tools = [ { type: "function", function: { name: "web_search", description:
 const availableTools = { "web_search": async ({ query }) => { console.log(`Executing Google web_search with query: "${query}"`); const apiKey = process.env.GOOGLE_SEARCH_API_KEY; const cx = process.env.GOOGLE_SEARCH_CX; const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(query)}`; try { const response = await axios.get(url); const results = response.data.items.map(item => ({ title: item.title, snippet: item.snippet })); return JSON.stringify(results.slice(0, 5)); } catch (error) { console.error("Google Search API error:", error.response ? error.response.data : error.message); return JSON.stringify({ error: "Sorry, the Google search failed." }); } }, };
 
 
-// AI 聊天 API 路由 (带联网开关逻辑)
+// AI 聊天 API 路由 (带联网开关逻辑 - 保持不变)
 app.post('/api/ai-chat', async (req, res) => {
     const { history, use_network } = req.body; 
-    
-    if (!history || !history.length) {
-        return res.status(400).json({ error: 'Conversation history is required.' });
-    }
-
+    if (!history || !history.length) { return res.status(400).json({ error: 'Conversation history is required.' }); }
     try {
-        const payload = {
-            model: "deepseek-chat",
-            messages: history,
-        };
-
+        const payload = { model: "deepseek-chat", messages: history };
         if (use_network) {
             console.log("Network search is ENABLED.");
             payload.tools = tools;
@@ -66,10 +78,8 @@ app.post('/api/ai-chat', async (req, res) => {
         } else {
             console.log("Network search is DISABLED.");
         }
-
         const initialResponse = await deepseek.chat.completions.create(payload);
         const message = initialResponse.choices[0].message;
-
         if (use_network && message.tool_calls) {
             console.log("AI decided to use the web_search tool.");
             history.push(message);
@@ -86,11 +96,7 @@ app.post('/api/ai-chat', async (req, res) => {
             const finalResponse = await deepseek.chat.completions.create({ model: "deepseek-chat", messages: history });
             res.json({ reply: finalResponse.choices[0].message.content });
         } else {
-            if (!use_network) {
-                console.log("AI directly responding (network disabled).");
-            } else {
-                console.log("AI directly responding (tool not needed).");
-            }
+            if (!use_network) { console.log("AI directly responding (network disabled)."); } else { console.log("AI directly responding (tool not needed)."); }
             res.json({ reply: message.content });
         }
     } catch (error) {
