@@ -1,4 +1,4 @@
-// server.js (CORRECTED - FINAL FIX FOR TAVILY INITIALIZATION)
+// server.js (ULTIMATE FINAL CORRECTION USING '@tavily/core')
 
 require('dotenv').config();
 
@@ -13,10 +13,9 @@ const OpenAI = require('openai');
 const axios = require('axios');
 const streamifier = require('streamifier');
 
-// ▼▼▼ CORRECTION: 引入 Tavily 的方式可能需要解构 ▼▼▼
-// 经过测试，最稳定的方式是直接 require
-const Tavily = require('tavily');
-// ▲▲▲ END CORRECTION ▲▲▲
+// ▼▼▼ ULTIMATE FINAL CORRECTION: Require the correct package '@tavily/core' and destructure TavilyClient ▼▼▼
+const { TavilyClient } = require('@tavily/core');
+// ▲▲▲ END ULTIMATE FINAL CORRECTION ▲▲▲
 
 
 // --- 全局配置 ---
@@ -45,10 +44,9 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 const deepseek = new OpenAI({ apiKey: process.env.DEEPSEEK_API_KEY, baseURL: 'https://api.deepseek.com/v1', timeout: 20000 });
 
-// ▼▼▼ CORRECTION: Tavily 的正确初始化方式 ▼▼▼
-// 它不是一个类，所以不能用 new。直接把 API Key 传给它。
-const tavily = new Tavily(process.env.TAVILY_API_KEY);
-// ▲▲▲ END CORRECTION ▲▲▲
+// ▼▼▼ ULTIMATE FINAL CORRECTION: Initialize with the correct class and pass the key as an object ▼▼▼
+const tavily = new TavilyClient({ apiKey: process.env.TAVILY_API_KEY });
+// ▲▲▲ END ULTIMATE FINAL CORRECTION ▲▲▲
 
 
 async function initializeDatabase() { try { const client = await pool.connect(); await client.query(`CREATE TABLE IF NOT EXISTS messages (id SERIAL PRIMARY KEY, nickname VARCHAR(100) NOT NULL, content TEXT NOT NULL, message_type VARCHAR(10) DEFAULT 'text', created_at TIMESTAMPTZ DEFAULT NOW());`); client.release(); console.log('Database table "messages" is ready.'); } catch (dbErr) { console.error('FATAL ERROR: Could not initialize database!', dbErr); process.exit(1); } }
@@ -87,54 +85,51 @@ async function searchWithGoogle({ query }) {
     console.log(`Executing Google web_search with query: "${cleanedQuery}"`);
     const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
     const cx = process.env.GOOGLE_SEARCH_CX;
-    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(cleanedQuery)}`; 
-    try { 
+    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(cleanedQuery)}`;
+    try {
         const response = await axios.get(url, { timeout: 20000 });
-        if (!response.data.items || response.data.items.length === 0) { return JSON.stringify({ "info": "No search results found." }); } 
-        const results = response.data.items.map(item => ({ title: item.title, snippet: item.snippet, link: item.link })); 
-        return JSON.stringify(results.slice(0, 5)); 
-    } catch (error) { 
-        console.error("Google Search API error:", error.message); 
-        return JSON.stringify({ error: `Google Search API failed. Reason: ${error.message}` }); 
-    } 
+        if (!response.data.items || response.data.items.length === 0) { return JSON.stringify({ "info": "No search results found." }); }
+        const results = response.data.items.map(item => ({ title: item.title, snippet: item.snippet, link: item.link }));
+        return JSON.stringify(results.slice(0, 5));
+    } catch (error) {
+        console.error("Google Search API error:", error.message);
+        return JSON.stringify({ error: `Google Search API failed. Reason: ${error.message}` });
+    }
 }
 
-// ▼▼▼ CORRECTION: searchWithTavily 函数已修正 ▼▼▼
 async function searchWithTavily({ query }) {
     console.log(`Executing Tavily web_search with query: "${query}"`);
     try {
-        // tavily.search 现在是正确的方法调用
         const response = await tavily.search(query, { search_depth: "advanced" });
-        return response.answer || JSON.stringify(response.results);
+        return JSON.stringify(response);
     } catch (error) {
         console.error("Tavily API error:", error.message);
         return JSON.stringify({ error: `Tavily API failed. Reason: ${error.message}` });
     }
 }
-// ▲▲▲ END CORRECTION ▲▲▲
 
 
 // AI 聊天 API 路由
-app.post('/api/ai-chat', async (req, res) => { 
-    const { history, use_network, search_provider = 'google' } = req.body; 
+app.post('/api/ai-chat', async (req, res) => {
+    const { history, use_network, search_provider = 'google' } = req.body;
 
-    if (!history || !history.length) { 
-        return res.status(400).json({ error: 'Conversation history is required.' }); 
-    } 
+    if (!history || !history.length) {
+        return res.status(400).json({ error: 'Conversation history is required.' });
+    }
 
-    try { 
-        const model_to_use = "deepseek-chat"; 
+    try {
+        const model_to_use = "deepseek-chat";
         console.log(`Using model: ${model_to_use}`);
-        
-        const payload = { model: model_to_use, messages: history }; 
 
-        if (use_network) { 
-            payload.tools = tools; 
-            payload.tool_choice = "auto"; 
-        } 
+        const payload = { model: model_to_use, messages: history };
 
-        const initialResponse = await deepseek.chat.completions.create(payload); 
-        const message = initialResponse.choices[0].message; 
+        if (use_network) {
+            payload.tools = tools;
+            payload.tool_choice = "auto";
+        }
+
+        const initialResponse = await deepseek.chat.completions.create(payload);
+        const message = initialResponse.choices[0].message;
 
         const toolCalls = message.tool_calls;
         if (use_network && toolCalls && Array.isArray(toolCalls) && toolCalls.length > 0) {
@@ -146,26 +141,25 @@ app.post('/api/ai-chat', async (req, res) => {
                 let toolResultContent;
 
                 console.log(`AI decided to use the tool: ${functionName}`);
-                
+
                 if (functionName === 'web_search') {
                     console.log(`Routing search to provider: ${search_provider}`);
                     switch (search_provider) {
                         case 'tavily':
                             toolResultContent = await searchWithTavily(functionArgs);
                             break;
-                        case 'serper': // Fallback, though Serper is not used
                         case 'google':
                         default:
                             toolResultContent = await searchWithGoogle(functionArgs);
                             break;
                     }
                 } else if (functionName === 'get_current_time') {
-                    toolResultContent = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }); 
+                    toolResultContent = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
                 } else {
                     console.log(`Error: Unknown tool '${functionName}' called.`);
                     toolResultContent = `Error: Tool '${functionName}' not found.`;
                 }
-                
+
                 history.push({
                     tool_call_id: toolCall.id,
                     role: "tool",
@@ -180,27 +174,27 @@ app.post('/api/ai-chat', async (req, res) => {
             });
             return res.json({ reply: finalResponse.choices[0].message.content });
 
-        } else { 
-            return res.json({ reply: message.content }); 
-        } 
-    } catch (error) { 
-        console.error('Fatal error in /api/ai-chat route:', error); 
-        if (error instanceof OpenAI.APIError) { 
-            return res.status(error.status || 500).json({ error: error.message }); 
-        } 
-        return res.status(500).json({ error: 'An unexpected server error occurred.' }); 
-    } 
+        } else {
+            return res.json({ reply: message.content });
+        }
+    } catch (error) {
+        console.error('Fatal error in /api/ai-chat route:', error);
+        if (error instanceof OpenAI.APIError) {
+            return res.status(error.status || 500).json({ error: error.message });
+        }
+        return res.status(500).json({ error: 'An unexpected server error occurred.' });
+    }
 });
 
 const users = {};
 io.on('connection', async (socket) => { console.log('User connected:', socket.id); try { const result = await pool.query('SELECT nickname, content AS msg, message_type, created_at FROM messages ORDER BY created_at DESC LIMIT 50'); socket.emit('load history', result.rows.reverse()); } catch (err) { console.error('Failed to read history:', err); } socket.on('join', (nickname) => { if (nickname) { socket.nickname = nickname; users[socket.id] = nickname; io.emit('update users', Object.values(users)); socket.broadcast.emit('system message', `“${nickname}”加入了聊天室`); } }); socket.on('chat message', async (data) => { if (socket.nickname && data.msg) { try { const result = await pool.query('INSERT INTO messages (nickname, content, message_type) VALUES ($1, $2, $3) RETURNING created_at', [socket.nickname, data.msg, data.type]); const messageToSend = { nickname: socket.nickname, msg: data.msg, message_type: data.type, created_at: result.rows[0].created_at }; io.emit('chat message', messageToSend); } catch (err) { console.error('Failed to save message:', err); } } }); socket.on('disconnect', () => { if (socket.nickname) { delete users[socket.id]; io.emit('update users', Object.values(users)); io.emit('system message', `“${socket.nickname}”离开了聊天室`); } console.log('User disconnected:', socket.id); }); });
 
-async function startServer() { 
-    await initializeDatabase(); 
-    const PORT = process.env.PORT || 3000; 
-    server.listen(PORT, () => { 
-        console.log(`Server is running successfully on http://localhost:${PORT}`); 
-    }); 
+async function startServer() {
+    await initializeDatabase();
+    const PORT = process.env.PORT || 3000;
+    server.listen(PORT, () => {
+        console.log(`Server is running successfully on http://localhost:${PORT}`);
+    });
 }
 
 startServer();
