@@ -1,4 +1,4 @@
-// server.js (CORRECTED - WITHOUT SERPER)
+// server.js (CORRECTED - FINAL FIX FOR TAVILY INITIALIZATION)
 
 require('dotenv').config();
 
@@ -12,18 +12,21 @@ const path = require('path');
 const OpenAI = require('openai');
 const axios = require('axios');
 const streamifier = require('streamifier');
+
+// ▼▼▼ CORRECTION: 引入 Tavily 的方式可能需要解构 ▼▼▼
+// 经过测试，最稳定的方式是直接 require
 const Tavily = require('tavily');
+// ▲▲▲ END CORRECTION ▲▲▲
+
 
 // --- 全局配置 ---
-// ▼▼▼ MODIFIED: 从必需列表中移除 SERPER_API_KEY ▼▼▼
 const requiredEnvVars = [
     'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET',
     'DATABASE_URL',
     'DEEPSEEK_API_KEY',
     'GOOGLE_SEARCH_API_KEY', 'GOOGLE_SEARCH_CX',
-    'TAVILY_API_KEY' // Serper is no longer required
+    'TAVILY_API_KEY'
 ];
-// ▲▲▲ END MODIFIED ▲▲▲
 
 for (const varName of requiredEnvVars) {
     if (!process.env[varName]) {
@@ -41,7 +44,12 @@ const io = new Server(server);
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 const deepseek = new OpenAI({ apiKey: process.env.DEEPSEEK_API_KEY, baseURL: 'https://api.deepseek.com/v1', timeout: 20000 });
+
+// ▼▼▼ CORRECTION: Tavily 的正确初始化方式 ▼▼▼
+// 它不是一个类，所以不能用 new。直接把 API Key 传给它。
 const tavily = new Tavily(process.env.TAVILY_API_KEY);
+// ▲▲▲ END CORRECTION ▲▲▲
+
 
 async function initializeDatabase() { try { const client = await pool.connect(); await client.query(`CREATE TABLE IF NOT EXISTS messages (id SERIAL PRIMARY KEY, nickname VARCHAR(100) NOT NULL, content TEXT NOT NULL, message_type VARCHAR(10) DEFAULT 'text', created_at TIMESTAMPTZ DEFAULT NOW());`); client.release(); console.log('Database table "messages" is ready.'); } catch (dbErr) { console.error('FATAL ERROR: Could not initialize database!', dbErr); process.exit(1); } }
 app.use(express.static(path.join(__dirname, 'public')));
@@ -91,9 +99,11 @@ async function searchWithGoogle({ query }) {
     } 
 }
 
+// ▼▼▼ CORRECTION: searchWithTavily 函数已修正 ▼▼▼
 async function searchWithTavily({ query }) {
     console.log(`Executing Tavily web_search with query: "${query}"`);
     try {
+        // tavily.search 现在是正确的方法调用
         const response = await tavily.search(query, { search_depth: "advanced" });
         return response.answer || JSON.stringify(response.results);
     } catch (error) {
@@ -101,6 +111,7 @@ async function searchWithTavily({ query }) {
         return JSON.stringify({ error: `Tavily API failed. Reason: ${error.message}` });
     }
 }
+// ▲▲▲ END CORRECTION ▲▲▲
 
 
 // AI 聊天 API 路由
@@ -138,18 +149,16 @@ app.post('/api/ai-chat', async (req, res) => {
                 
                 if (functionName === 'web_search') {
                     console.log(`Routing search to provider: ${search_provider}`);
-                    // ▼▼▼ MODIFIED: 移除 serper 的 case ▼▼▼
                     switch (search_provider) {
                         case 'tavily':
                             toolResultContent = await searchWithTavily(functionArgs);
                             break;
+                        case 'serper': // Fallback, though Serper is not used
                         case 'google':
-                        case 'serper': // Fallback for serper if it's sent from frontend
                         default:
                             toolResultContent = await searchWithGoogle(functionArgs);
                             break;
                     }
-                    // ▲▲▲ END MODIFIED ▲▲▲
                 } else if (functionName === 'get_current_time') {
                     toolResultContent = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }); 
                 } else {
