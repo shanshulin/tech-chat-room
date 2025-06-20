@@ -1,98 +1,121 @@
-// server.js (最终精简版: DeepSeek + Google)
+// client.js (最终思维校正版)
 
-require('dotenv').config();
+document.addEventListener('DOMContentLoaded', () => {
+  // 强制隐藏所有窗口，防止启动时全部显示
+  document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
 
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const { Pool } = require('pg');
-const multer = require('multer');
-const cloudinary = require('cloudinary').v2;
-const path = require('path');
-const OpenAI = require('openai');
-const axios = require('axios');
-// ▼▼▼ 清理: 不再需要 rss-parser 和 iconv-lite ▼▼▼
-// const Parser = require('rss-parser');
-// const iconv = require('iconv-lite');
-// ▲▲▲ 清理结束 ▲▲▲
-const streamifier = require('streamifier');
+  // --- DOM 元素统一获取 ---
+  const desktop = document.getElementById('desktop');
+  const taskbarApps = document.getElementById('taskbar-apps');
+  const clockElement = document.getElementById('clock');
+  
+  const apps = {
+      'chat': { icon: document.getElementById('chat-app-icon'), window: document.getElementById('chat-screen'), closeBtn: document.getElementById('chat-close-btn'), minimizeBtn: document.getElementById('minimize-btn'), maximizeBtn: document.getElementById('maximize-btn'), title: '糯米团 v1.0' },
+      'rss': { icon: document.getElementById('rss-reader-icon'), window: document.getElementById('rss-reader-screen'), closeBtn: document.getElementById('rss-close-btn'), minimizeBtn: document.getElementById('rss-minimize-btn'), maximizeBtn: document.getElementById('rss-maximize-btn'), title: 'Netscape RSS' },
+      'ai': { icon: document.getElementById('ai-app-icon'), window: document.getElementById('ai-chat-screen'), closeBtn: document.getElementById('ai-close-btn'), minimizeBtn: document.getElementById('ai-minimize-btn'), maximizeBtn: document.getElementById('ai-maximize-btn'), title: 'DeepSeek AI' },
+      'login': { window: document.getElementById('login-screen'), closeBtn: document.getElementById('login-close-btn') },
+      'nickname': { window: document.getElementById('nickname-screen'), closeBtn: document.getElementById('nickname-close-btn') },
+      'search': { window: document.getElementById('search-window'), closeBtn: document.getElementById('search-close-btn') }
+  };
 
-// --- 全局配置 ---
-if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.DATABASE_URL || !process.env.DEEPSEEK_API_KEY || !process.env.GOOGLE_SEARCH_API_KEY || !process.env.GOOGLE_SEARCH_CX) {
-    console.error("FATAL ERROR: Missing required environment variables.");
-    process.exit(1);
-}
+  const loginBtn = document.getElementById('login-btn');
+  const passwordInput = document.getElementById('password-input');
+  const errorMsg = document.getElementById('error-msg');
+  const nicknameBtn = document.getElementById('nickname-btn');
+  const nicknameInput = document.getElementById('nickname-input');
+  const sendBtn = document.getElementById('send-btn');
+  const input = document.getElementById('input');
+  const messages = document.getElementById('messages');
+  const usersList = document.querySelector('#users-list');
+  const chatWindowTitle = document.querySelector('#chat-screen .title-bar-text');
+  const emojiBtn = document.getElementById('emoji-btn');
+  const emojiPanel = document.getElementById('emoji-panel');
+  const imageBtn = document.getElementById('image-btn');
+  const imageUploadInput = document.getElementById('image-upload-input');
+  const imageModal = document.getElementById('image-modal');
+  const modalImg = document.getElementById('modal-img');
+  const modalCloseBtn = document.querySelector('.close-btn');
+  const searchBtn = document.getElementById('search-btn');
+  
+  // RSS Reader Elements
+  const rssUrlInput = document.getElementById('rss-url-input');
+  const fetchRssBtn = document.getElementById('fetch-rss-btn');
+  const rssListPanel = document.getElementById('rss-list-panel');
+  const rssArticlePanel = document.getElementById('rss-article-panel');
+  
+  // AI 机器人相关元素
+  const aiMessages = document.getElementById('ai-messages');
+  const aiInput = document.getElementById('ai-input');
+  const aiSendBtn = document.getElementById('ai-send-btn');
+  const aiNetworkToggle = document.getElementById('ai-network-toggle');
+  
+  // --- 状态变量 ---
+  const socket = io({ reconnection: true, reconnectionDelay: 1000, reconnectionDelayMax: 5000, reconnectionAttempts: Infinity });
+  let myNickname = sessionStorage.getItem('nickname') || '';
+  let zIndexCounter = 10;
+  const KAOMOJI_MAP = { ':happy:': '(^▽^)', ':lol:': 'o(>▽<)o', ':love:': '(｡♥‿♥｡)', ':excited:': '(*^▽^*)', ':proud:': '(´_ゝ`)', ':sad:': '(T_T)', ':cry:': '(；′⌒`)', ':sob:': '༼ಢ_ಢ༽', ':wow:': 'Σ(°ロ°)', ':speechless:': '(－_－) zzZ', ':confused:': '(°_°)?', ':wave:': '(^_^)/', ':ok:': 'd(^_^o)', ':sorry:': 'm(_ _)m', ':run:': 'ε=ε=┌( >_<)┘', ':tableflip:': '(╯°□°）╯︵ ┻━┻', ':cat:': '(=^ェ^=)', ':bear:': 'ʕ •ᴥ•ʔ', ':note:': 'ヾ( ´ A ` )ﾉ', ':sleepy:': '(´-ω-`)' };
+  
+  // RSS State Variables
+  let rssHistory = [];
+  let rssCurrentIndex = -1;
+  let bookmarks = JSON.parse(localStorage.getItem('rss_bookmarks')) || [];
 
-// ... (初始化代码) ...
-cloudinary.config({ cloud_name: process.env.CLOUDINARY_CLOUD_NAME, api_key: process.env.CLOUDINARY_API_KEY, api_secret: process.env.CLOUDINARY_API_SECRET });
-const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
-const deepseek = new OpenAI({ apiKey: process.env.DEEPSEEK_API_KEY, baseURL: 'https://api.deepseek.com/v1', timeout: 20000 });
-async function initializeDatabase() { try { const client = await pool.connect(); await client.query(`CREATE TABLE IF NOT EXISTS messages (id SERIAL PRIMARY KEY, nickname VARCHAR(100) NOT NULL, content TEXT NOT NULL, message_type VARCHAR(10) DEFAULT 'text', created_at TIMESTAMPTZ DEFAULT NOW());`); client.release(); console.log('Database table "messages" is ready.'); } catch (dbErr) { console.error('FATAL ERROR: Could not initialize database!', dbErr); process.exit(1); } }
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
-app.post('/upload', upload.single('image'), (req, res) => { if (!req.file) { return res.status(400).json({ error: 'No file uploaded.' }); } let cld_upload_stream = cloudinary.uploader.upload_stream({ folder: "chat_app" }, (error, result) => { if (error) { console.error('Cloudinary upload error:', error); return res.status(500).json({ error: 'Failed to upload image.' }); } res.status(200).json({ imageUrl: result.secure_url }); }); streamifier.createReadStream(req.file.buffer).pipe(cld_upload_stream); });
+  // ▼▼▼ 修改: AI 机器人状态变量 - 优化系统提示词以校正搜索行为 ▼▼▼
+  const systemPrompt = `You are a helpful assistant powered by the DeepSeek model. You must identify yourself as a DeepSeek assistant.
+  When you need to search for the "latest" or "current" information, use the web_search tool.
+  IMPORTANT: When using the web_search tool for the latest information, construct a simple query like "latest entertainment news" or "current weather in Beijing". DO NOT add any specific dates like '2023' or 'September' to the query unless the user explicitly provides them.
+  Please format your response using Markdown.`;
+  // 中文版本:
+  // const systemPrompt = `你是一个由 DeepSeek 模型驱动的乐于助人的助手。你必须表明自己是 DeepSeek 的助手。
+  // 当你需要搜索“最新的”或“当前的”信息时，请使用 web_search 工具。
+  // 重要提示：当使用 web_search 工具获取最新信息时，请构建一个简单的查询，例如“最新娱乐新闻”或“北京当前天气”。除非用户明确提供了具体的年份或月份，否则不要在查询中自行添加任何日期，比如‘2023年’或‘9月’。
+  // 请使用 Markdown 格式化你的回答。`;
 
-// ▼▼▼ 清理: 移除 /parse-rss 路由 ▼▼▼
-// app.get('/parse-rss', ...);
-// ▲▲▲ 清理结束 ▲▲▲
+  let aiConversationHistory = [{ role: 'system', content: systemPrompt }];
+  // ▲▲▲ 修改结束 ▲▲▲
 
-// --- 智能代理核心 ---
-// ▼▼▼ 清理: 从工具列表中移除微博热搜 ▼▼▼
-const tools = [
-    {
-        type: "function",
-        function: {
-            name: "web_search",
-            description: "当需要回答通用问题、时事、人物、事件、定义，或者在没有更专业的工具可用时，使用此工具进行网络搜索。",
-            parameters: {
-                type: "object",
-                properties: { query: { type: "string", description: "用于搜索引擎的、简洁明了的搜索查询词。" } },
-                required: ["query"],
-            },
-        },
-    },
-    {
-        type: "function",
-        function: {
-            name: "get_current_time",
-            description: "获取当前的日期和时间。",
-            parameters: { type: "object", properties: {} },
-        },
-    }
-];
-
-const availableTools = {
-    // ▼▼▼ 清理: 移除 get_weibo_hot_search 函数 ▼▼▼
-    "web_search": async ({ query }) => {
-        console.log(`Executing Google web_search with query: "${query}"`);
-        const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
-        const cx = process.env.GOOGLE_SEARCH_CX;
-        const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(query)}`;
-        try { 
-            const response = await axios.get(url, { timeout: 20000 });
-            if (!response.data.items || response.data.items.length === 0) { return JSON.stringify({ "info": "No search results found." }); } 
-            const results = response.data.items.map(item => ({ title: item.title, snippet: item.snippet })); 
-            return JSON.stringify(results.slice(0, 5)); 
-        } catch (error) { 
-            console.error("Google Search API error:", error.message); 
-            return JSON.stringify({ error: `Google Search API failed. Reason: ${error.message}` }); 
-        } 
-    }, 
-    "get_current_time": async () => { 
-        console.log("Executing get_current_time tool."); 
-        return new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }); 
-    } 
-};
-// ▲▲▲ 清理结束 ▲▲▲
-
-// ... (AI 聊天 API 路由 和 Socket.IO 连接逻辑保持不变) ...
-app.post('/api/ai-chat', async (req, res) => { const { history, use_network } = req.body; if (!history || !history.length) { return res.status(400).json({ error: 'Conversation history is required.' }); } try { const model_to_use = "deepseek-reasoner"; const payload = { model: model_to_use, messages: history }; if (use_network) { payload.tools = tools; payload.tool_choice = "auto"; } const initialResponse = await deepseek.chat.completions.create(payload); const message = initialResponse.choices[0].message; if (use_network && message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length > 0) { const cleanMessage = { role: message.role, tool_calls: message.tool_calls, }; if (message.content) { cleanMessage.content = message.content; } history.push(cleanMessage); const toolCall = message.tool_calls[0]; const functionName = toolCall.function.name; const functionArgs = toolCall.function.arguments ? JSON.parse(toolCall.function.arguments) : {}; console.log(`AI decided to use the tool: ${functionName}`); const toolToExecute = availableTools[functionName]; if (toolToExecute) { const toolResult = await toolToExecute(functionArgs); history.push({ tool_call_id: toolCall.id, role: "tool", name: functionName, content: toolResult }); } else { const errorContent = `Error: Tool '${functionName}' not found.`; history.push({ tool_call_id: toolCall.id, role: "tool", name: functionName, content: JSON.stringify({ error: errorContent })}); } const finalResponse = await deepseek.chat.completions.create({ model: model_to_use, messages: history }); return res.json({ reply: finalResponse.choices[0].message.content }); } else { return res.json({ reply: message.content }); } } catch (error) { console.error('Fatal error in /api/ai-chat route:', error); if (error instanceof OpenAI.APIError) { return res.status(error.status || 500).json({ error: error.message }); } return res.status(500).json({ error: 'An unexpected server error occurred.' }); } });
-const users = {};
-io.on('connection', async (socket) => { console.log('User connected:', socket.id); try { const result = await pool.query('SELECT nickname, content AS msg, message_type, created_at FROM messages ORDER BY created_at DESC LIMIT 50'); socket.emit('load history', result.rows.reverse()); } catch (err) { console.error('Failed to read history:', err); } socket.on('join', (nickname) => { if (nickname) { socket.nickname = nickname; users[socket.id] = nickname; io.emit('update users', Object.values(users)); socket.broadcast.emit('system message', `“${nickname}”加入了聊天室`); } }); socket.on('chat message', async (data) => { if (socket.nickname && data.msg) { try { const result = await pool.query('INSERT INTO messages (nickname, content, message_type) VALUES ($1, $2, $3) RETURNING created_at', [socket.nickname, data.msg, data.type]); const messageToSend = { nickname: socket.nickname, msg: data.msg, message_type: data.type, created_at: result.rows[0].created_at }; io.emit('chat message', messageToSend); } catch (err) { console.error('Failed to save message:', err); } } }); socket.on('disconnect', () => { if (socket.nickname) { delete users[socket.id]; io.emit('update users', Object.values(users)); io.emit('system message', `“${socket.nickname}”离开了聊天室`); } console.log('User disconnected:', socket.id); }); });
-async function startServer() { await initializeDatabase(); const PORT = process.env.PORT || 3000; server.listen(PORT, () => { console.log(`Server is running successfully on http://localhost:${PORT}`); }); }
-startServer();
+  // --- 窗口管理器 ---
+  const windowManager = { /* ... (窗口管理器代码保持不变) ... */ };
+  Object.assign(windowManager, { open(appId) { const app = apps[appId]; if (!app || !app.window) return; app.window.classList.add('active'); this.focus(appId); if (app.icon) this.createTaskbarTab(appId); }, close(appId) { const app = apps[appId]; if (!app || !app.window) return; app.window.classList.remove('active', 'maximized'); const taskbarTab = document.getElementById(`${appId}-taskbar-tab`); if (taskbarTab) taskbarTab.remove(); }, minimize(appId) { const app = apps[appId]; if (!app || !app.window) return; app.window.classList.remove('active'); const taskbarTab = document.getElementById(`${appId}-taskbar-tab`); if (taskbarTab) { taskbarTab.classList.remove('active'); taskbarTab.classList.add('inactive'); } }, toggle(appId) { const app = apps[appId]; if (!app || !app.window) return; if (app.window.classList.contains('active')) { this.minimize(appId); } else { app.window.classList.add('active'); this.focus(appId); } }, focus(appId) { const app = apps[appId]; if (!app || !app.window) return; app.window.style.zIndex = ++zIndexCounter; document.querySelectorAll('.taskbar-tab').forEach(t => t.classList.remove('active', 'inactive')); document.querySelectorAll('.taskbar-tab').forEach(t => { if(t.id !== `${appId}-taskbar-tab`) t.classList.add('inactive'); }); const taskbarTab = document.getElementById(`${appId}-taskbar-tab`); if (taskbarTab) taskbarTab.classList.add('active'); }, createTaskbarTab(appId) { const app = apps[appId]; if (document.getElementById(`${appId}-taskbar-tab`)) return; const taskbarTab = document.createElement('div'); taskbarTab.id = `${appId}-taskbar-tab`; taskbarTab.className = 'taskbar-tab active'; taskbarTab.textContent = app.title; taskbarApps.appendChild(taskbarTab); taskbarTab.addEventListener('click', () => this.toggle(appId)); } });
+  
+  // --- 核心功能函数 ---
+  function makeDraggable(windowElement) { /* ... (拖拽函数代码保持不变) ... */ }
+  Object.assign(makeDraggable, (windowElement) => { const titleBar = windowElement.querySelector('.title-bar'); if (!titleBar) return; let isDragging = false, offsetX, offsetY; titleBar.addEventListener('mousedown', (e) => { if (windowElement.classList.contains('maximized') || e.target.closest('.button-control')) return; isDragging = true; const appId = Object.keys(apps).find(key => apps[key].window === windowElement); if (appId) windowManager.focus(appId); const rect = windowElement.getBoundingClientRect(); windowElement.style.top = `${rect.top}px`; windowElement.style.left = `${rect.left}px`; windowElement.style.transform = 'none'; offsetX = e.clientX - rect.left; offsetY = e.clientY - rect.top; document.body.classList.add('dragging-active'); e.preventDefault(); }); document.addEventListener('mousemove', (e) => { if (!isDragging) return; windowElement.style.left = `${e.clientX - offsetX}px`; windowElement.style.top = `${e.clientY - offsetY}px`; }); document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; document.body.classList.remove('dragging-active'); } }); });
+  function sendMessage() { if (input.value && !input.disabled) { socket.emit('chat message', { type: 'text', msg: input.value }); input.value = ''; input.focus(); } }
+  function addSystemMessage(msg) { const item = document.createElement('div'); item.classList.add('system-message'); item.textContent = `*** ${msg} ***`; messages.appendChild(item); messages.scrollTop = messages.scrollHeight; }
+  function createChatMessageElement(data) { const item = document.createElement('div'); item.className = 'message-item'; const timestampSpan = document.createElement('span'); timestampSpan.className = 'timestamp'; const date = new Date(data.created_at || Date.now()); timestampSpan.textContent = `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2,'0')}/${String(date.getDate()).padStart(2,'0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`; const nicknameSpan = document.createElement('span'); nicknameSpan.className = 'nickname'; nicknameSpan.textContent = `<${data.nickname}>: `; const contentSpan = document.createElement('span'); const messageContent = data.msg || ''; if (data.message_type === 'image') { const img = document.createElement('img'); img.src = messageContent; img.className = 'chat-image'; contentSpan.appendChild(img); } else { let finalMessage = messageContent; for (const code in KAOMOJI_MAP) { const regex = new RegExp(code.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'); finalMessage = finalMessage.replace(regex, KAOMOJI_MAP[code]); } contentSpan.textContent = finalMessage; } item.appendChild(timestampSpan); item.appendChild(nicknameSpan); item.appendChild(contentSpan); return item; }
+  function addChatMessage(data) { const item = createChatMessageElement(data); messages.appendChild(item); messages.scrollTop = messages.scrollHeight; }
+  async function uploadImage(file) { if (!file || !file.type.startsWith('image/')) return; addSystemMessage(`正在上传图片: ${file.name || 'clipboard_image.png'}...`); const formData = new FormData(); formData.append('image', file); try { const response = await fetch('/upload', { method: 'POST', body: formData }); if (!response.ok) throw new Error('上传失败'); const result = await response.json(); socket.emit('chat message', { type: 'image', msg: result.imageUrl }); } catch (error) { console.error('上传出错:', error); addSystemMessage(`图片上传失败。`); } }
+  function updateClock() { const now = new Date(); const hours = String(now.getHours()).padStart(2, '0'); const minutes = String(now.getMinutes()).padStart(2, '0'); clockElement.textContent = `${hours}:${minutes}`; }
+  function addAiChatMessage(role, text) { const item = document.createElement('div'); if (role === 'user') { item.className = 'user-message'; item.textContent = `You: ${text}`; } else if (role === 'assistant') { item.className = 'ai-message'; item.innerHTML = `<b>AI:</b> ${marked.parse(text)}`; } else if (role === 'thinking') { item.className = 'thinking-message'; item.id = 'thinking-indicator'; item.textContent = 'AI is thinking...'; } else if (role === 'error') { item.className = 'system-message'; item.textContent = `*** Error: ${text} ***`; } aiMessages.appendChild(item); aiMessages.scrollTop = aiMessages.scrollHeight; return item; }
+  async function sendAiMessage() { const messageText = aiInput.value.trim(); if (!messageText) return; addAiChatMessage('user', messageText); aiConversationHistory.push({ role: 'user', content: messageText }); aiInput.value = ''; aiInput.disabled = true; aiSendBtn.disabled = true; const thinkingIndicator = addAiChatMessage('thinking'); const useNetwork = aiNetworkToggle.checked; try { const response = await fetch('/api/ai-chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ history: aiConversationHistory, use_network: useNetwork }) }); if (!response.ok) { const errData = await response.json(); throw new Error(errData.error || 'AI service returned an error.'); } const data = await response.json(); addAiChatMessage('assistant', data.reply); aiConversationHistory.push({ role: 'assistant', content: data.reply }); } catch (error) { console.error('AI Chat Error:', error); addAiChatMessage('error', error.message); } finally { if (thinkingIndicator) thinkingIndicator.remove(); aiInput.disabled = false; aiSendBtn.disabled = false; aiInput.focus(); } }
+  
+  // ... (事件绑定等其他代码保持不变) ...
+  Object.keys(apps).forEach(appId => { if (apps[appId].window) { makeDraggable(apps[appId].window); apps[appId].window.addEventListener('mousedown', () => windowManager.focus(appId), true); } if (apps[appId].icon) { apps[appId].icon.addEventListener('dblclick', () => { const taskbarTab = document.getElementById(`${appId}-taskbar-tab`); if(taskbarTab){ windowManager.toggle(appId); } else if (appId === 'chat') { if (myNickname) windowManager.open('chat'); else windowManager.open('login'); } else { windowManager.open(appId); } }); } if (apps[appId].closeBtn) apps[appId].closeBtn.addEventListener('click', (e) => { e.stopPropagation(); windowManager.close(appId); }); if (apps[appId].minimizeBtn) apps[appId].minimizeBtn.addEventListener('click', (e) => { e.stopPropagation(); windowManager.minimize(appId); }); if (apps[appId].maximizeBtn) apps[appId].maximizeBtn.addEventListener('click', (e) => { e.stopPropagation(); apps[appId].window.classList.toggle('maximized'); }); });
+  loginBtn.addEventListener('click', () => { if (passwordInput.value === 'MWNMT') { windowManager.close('login'); windowManager.open('nickname'); } else { errorMsg.textContent = '错误: 密码不正确。'; setTimeout(() => { errorMsg.textContent = ''; }, 3000); } });
+  nicknameBtn.addEventListener('click', () => { const nickname = nicknameInput.value.trim(); if (nickname) { myNickname = nickname; sessionStorage.setItem('nickname', nickname); socket.emit('join', nickname); windowManager.close('nickname'); windowManager.open('chat'); } });
+  searchBtn.addEventListener('click', () => windowManager.open('search'));
+  passwordInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') loginBtn.click(); });
+  nicknameInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') nicknameBtn.click(); });
+  sendBtn.addEventListener('click', sendMessage);
+  input.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendMessage(); });
+  imageBtn.addEventListener('click', () => imageUploadInput.click());
+  imageUploadInput.addEventListener('change', (event) => { const file = event.target.files[0]; if (file) uploadImage(file); event.target.value = ''; });
+  input.addEventListener('paste', (e) => { const items = (e.clipboardData || window.clipboardData).items; for (const item of items) { if (item.kind === 'file' && item.type.startsWith('image/')) { e.preventDefault(); const file = item.getAsFile(); if (file) { uploadImage(file); } return; } } });
+  emojiBtn.addEventListener('click', (e) => { e.stopPropagation(); emojiPanel.classList.toggle('hidden'); });
+  document.addEventListener('click', (e) => { if (!emojiPanel.contains(e.target)) emojiPanel.classList.add('hidden'); });
+  if(modalCloseBtn) modalCloseBtn.addEventListener('click', () => imageModal.classList.remove('active'));
+  imageModal.addEventListener('click', (e) => { if (e.target === imageModal) imageModal.classList.remove('active'); });
+  document.addEventListener('keydown', (e) => { if (e.key === "Escape") imageModal.classList.remove('active'); });
+  aiSendBtn.addEventListener('click', sendAiMessage);
+  aiInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendAiMessage(); });
+  updateClock();
+  setInterval(updateClock, 1000 * 30);
+  for (const code in KAOMOJI_MAP) { const kaomoji = KAOMOJI_MAP[code]; const panelItem = document.createElement('div'); panelItem.className = 'emoji-item'; panelItem.textContent = kaomoji; panelItem.title = code; panelItem.addEventListener('click', () => { input.value += ` ${code} `; input.focus(); emojiPanel.classList.add('hidden'); }); emojiPanel.appendChild(panelItem); }
+  socket.on('load history', (history) => { messages.innerHTML = ''; history.forEach(data => addChatMessage(data)); addSystemMessage('欢迎来到聊天室！'); });
+  socket.on('chat message', (data) => addChatMessage(data));
+  socket.on('system message', (msg) => addSystemMessage(msg));
+  socket.on('update users', (users) => { usersList.innerHTML = ''; users.forEach(user => { const item = document.createElement('li'); item.textContent = user; usersList.appendChild(item); }); });
+  socket.on('disconnect', () => { addSystemMessage('您已断开连接，正在尝试重连...'); chatWindowTitle.textContent = '糯米团 v1.0 - 正在重新连接...'; input.disabled = true; sendBtn.disabled = true; });
+  socket.on('connect', () => { if (myNickname) { chatWindowTitle.textContent = '糯米团 v1.0 - 在线聊天室'; input.disabled = false; sendBtn.disabled = false; socket.emit('join', myNickname); } });
+});
