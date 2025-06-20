@@ -299,7 +299,14 @@ button:active {
 .messages { flex-grow: 1; height: 300px; background: #fff; padding: 10px; overflow-y: scroll; border: 2px solid; border-top-color: #000; border-left-color: #000; border-right-color: #fff; border-bottom-color: #fff; margin-bottom: 10px; line-height: 1.4; text-align: left; }
 .messages .system-message { text-align: center; color: #808080; }
 .messages .nickname { font-weight: bold; }
-.chat-input-area { display: flex; flex-shrink: 0; align-items: center; /* <<< 这里是修复内容 */ }
+
+/* --- 核心修复 --- */
+.chat-input-area { 
+    display: flex; 
+    flex-shrink: 0; 
+    align-items: center; /* 关键：让输入框和按钮垂直居中对齐 */
+}
+
 #input, #ai-input { 
     width: 100%; 
     margin: 0; 
@@ -395,9 +402,11 @@ body.dragging-active { cursor: move; user-select: none; }
     font-weight: bold;
 }
 
+/* --- AI 聊天窗口布局优化 --- */
 .ai-input-container {
     display: flex;
     flex-direction: column;
+    gap: 4px; /* 为输入区和工具栏增加一点间距 */
 }
 
 .ai-toolbar {
