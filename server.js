@@ -1,4 +1,4 @@
-// server.js (ULTIMATE FINAL CORRECTION FOR CJS/ESM INTEROP)
+// server.js (ULTIMATE FINAL FIX - MANUAL AXIOS REQUEST TO TAVILY API)
 
 require('dotenv').config();
 
@@ -69,30 +69,28 @@ async function searchWithGoogle({ query }) {
     }
 }
 
-// ▼▼▼ ULTIMATE FINAL CORRECTION FOR TAVILY ▼▼▼
+// ▼▼▼ THE FOOLPROOF TAVILY IMPLEMENTATION ▼▼▼
 async function searchWithTavily({ query }) {
     console.log(`Executing Tavily web_search with query: "${query}"`);
     try {
-        // Step 1: Dynamically import the ESM package.
-        const TavilyModule = await import('@tavily/core');
+        const response = await axios.post('https://api.tavily.com/search', {
+            api_key: process.env.TAVILY_API_KEY,
+            query: query,
+            search_depth: "advanced",
+            include_answer: true, // Make sure to get the summarized answer
+            max_results: 5
+        }, {
+            headers: { 'Content-Type': 'application/json' }
+        });
         
-        // Step 2: Access the constructor from the 'default' property of the imported module.
-        const TavilyClient = TavilyModule.default;
-        
-        // Step 3: Create the instance.
-        const tavily = new TavilyClient({ apiKey: process.env.TAVILY_API_KEY });
-        
-        // Step 4: Call the search method.
-        const response = await tavily.search(query, { search_depth: "advanced" });
-        return JSON.stringify(response);
+        // Return the whole data object as a string for the LLM
+        return JSON.stringify(response.data);
     } catch (error) {
-        console.error("Tavily API error:", error);
-        // Also log the original error to see if it's the constructor issue or something else
-        console.error(error); 
+        console.error("Tavily API error:", error.response ? error.response.data : error.message);
         return JSON.stringify({ error: `Tavily API failed. Reason: ${error.message}` });
     }
 }
-// ▲▲▲ END ULTIMATE FINAL CORRECTION ▲▲▲
+// ▲▲▲ END FOOLPROOF IMPLEMENTATION ▲▲▲
 
 // AI 聊天 API 路由
 app.post('/api/ai-chat', async (req, res) => {
