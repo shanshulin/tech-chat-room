@@ -406,49 +406,66 @@ button:active {
 .title-bar { cursor: move; }
 body.dragging-active { cursor: move; user-select: none; }
 
-/* ▼▼▼ AI 聊天窗口样式 & Markdown 样式 ▼▼▼ */
+/* AI 聊天窗口样式 & Markdown 样式 */
 .messages .user-message {
     text-align: right;
     margin-left: 40px;
-    color: #000080; /* 用户消息用深蓝色 */
+    color: #000080;
     padding: 2px 0;
 }
 .messages .ai-message {
     text-align: left;
     margin-right: 40px;
-    color: #008000; /* AI 消息用深绿色 */
+    color: #008000;
     padding: 2px 0;
 }
 .messages .ai-message b {
-    color: #000; /* "AI:" 标识用黑色 */
+    color: #000;
 }
 .messages .thinking-message {
     text-align: center;
     color: #808080;
     font-style: italic;
 }
-
-/* AI 回复的 Markdown 格式美化 */
 .messages .ai-message ul,
 .messages .ai-message ol {
     padding-left: 20px;
     margin-top: 5px;
     margin-bottom: 5px;
 }
-
 .messages .ai-message h1,
 .messages .ai-message h2,
 .messages .ai-message h3 {
     margin-top: 10px;
     margin-bottom: 5px;
-    font-size: 1.1em; /* 调整标题大小以适应窗口 */
+    font-size: 1.1em;
 }
-
 .messages .ai-message p {
-    margin: 5px 0; /* 段落间增加一些间距 */
+    margin: 5px 0;
+}
+.messages .ai-message strong {
+    font-weight: bold;
 }
 
-.messages .ai-message strong {
-    font-weight: bold; /* 确保 **text** 是粗体 */
+.ai-input-container {
+    display: flex;
+    flex-direction: column;
 }
-/* ▲▲▲ 新增结束 ▲▲▲ */
+
+.ai-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 4px 0;
+    font-size: 14px;
+}
+
+.ai-toolbar label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.ai-toolbar input[type="checkbox"] {
+    margin-right: 5px;
+}

@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const aiMessages = document.getElementById('ai-messages');
     const aiInput = document.getElementById('ai-input');
     const aiSendBtn = document.getElementById('ai-send-btn');
+    const aiNetworkToggle = document.getElementById('ai-network-toggle');
     
     // --- 状态变量 ---
     const socket = io({ reconnection: true, reconnectionDelay: 1000, reconnectionDelayMax: 5000, reconnectionAttempts: Infinity });
@@ -164,16 +165,14 @@ document.addEventListener('DOMContentLoaded', () => {
     async function uploadImage(file) { if (!file || !file.type.startsWith('image/')) return; addSystemMessage(`正在上传图片: ${file.name || 'clipboard_image.png'}...`); const formData = new FormData(); formData.append('image', file); try { const response = await fetch('/upload', { method: 'POST', body: formData }); if (!response.ok) throw new Error('上传失败'); const result = await response.json(); socket.emit('chat message', { type: 'image', msg: result.imageUrl }); } catch (error) { console.error('上传出错:', error); addSystemMessage(`图片上传失败。`); } }
     function updateClock() { const now = new Date(); const hours = String(now.getHours()).padStart(2, '0'); const minutes = String(now.getMinutes()).padStart(2, '0'); clockElement.textContent = `${hours}:${minutes}`; }
 
-    // ▼▼▼ 修改: AI 聊天核心功能 - 使用 marked.js 解析回复 ▼▼▼
+    // AI 聊天核心功能
     function addAiChatMessage(role, text) {
         const item = document.createElement('div');
         if (role === 'user') {
             item.className = 'user-message';
-            // 为了安全，用户的输入不进行HTML解析
             item.textContent = `You: ${text}`;
         } else if (role === 'assistant') {
             item.className = 'ai-message';
-            // 使用 marked.js 将AI的Markdown回复转换为HTML
             item.innerHTML = `<b>AI:</b> ${marked.parse(text)}`;
         } else if (role === 'thinking') {
             item.className = 'thinking-message';
@@ -187,7 +186,6 @@ document.addEventListener('DOMContentLoaded', () => {
         aiMessages.scrollTop = aiMessages.scrollHeight;
         return item;
     }
-    // ▲▲▲ 修改结束 ▲▲▲
 
     async function sendAiMessage() {
         const messageText = aiInput.value.trim();
@@ -200,12 +198,17 @@ document.addEventListener('DOMContentLoaded', () => {
         aiSendBtn.disabled = true;
 
         const thinkingIndicator = addAiChatMessage('thinking');
+        
+        const useNetwork = aiNetworkToggle.checked;
 
         try {
             const response = await fetch('/api/ai-chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ history: aiConversationHistory })
+                body: JSON.stringify({ 
+                    history: aiConversationHistory,
+                    use_network: useNetwork
+                })
             });
 
             if (!response.ok) {

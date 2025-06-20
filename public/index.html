@@ -117,9 +117,17 @@
                     <div id="ai-messages" class="messages">
                         <div class="ai-message"><b>AI:</b> 您好！今天有什么可以帮您的吗？</div>
                     </div>
-                    <div class="chat-input-area">
-                        <input id="ai-input" autocomplete="off" placeholder="向AI提问..." />
-                        <button id="ai-send-btn">发送</button>
+                    <div class="ai-input-container">
+                        <div class="chat-input-area">
+                            <input id="ai-input" autocomplete="off" placeholder="向AI提问..." />
+                            <button id="ai-send-btn">发送</button>
+                        </div>
+                        <div class="ai-toolbar">
+                            <label for="ai-network-toggle">
+                                <input type="checkbox" id="ai-network-toggle" checked>
+                                联网搜索
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -134,9 +142,7 @@
     </div>
     
     <script src="/socket.io/socket.io.js"></script>
-    <!-- ▼▼▼ 新增: 引入 Marked.js 用于解析 Markdown ▼▼▼ -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- ▲▲▲ 新增结束 ▲▲▲ -->
     <script src="client.js"></script>
 </body>
 </html>
