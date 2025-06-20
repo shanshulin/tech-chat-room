@@ -1,4 +1,4 @@
-// server.js (模型切换为 deepseek-reasoner)
+// server.js (最终健壮版)
 
 require('dotenv').config();
 
@@ -50,10 +50,8 @@ app.post('/api/ai-chat', async (req, res) => {
     if (!history || !history.length) { return res.status(400).json({ error: 'Conversation history is required.' }); }
 
     try {
-        // ▼▼▼ 修改: 将模型切换为 deepseek-reasoner ▼▼▼
-        const model_to_use = "deepseek-reasoner"; 
+        const model_to_use = "deepseek-reasoner";
         console.log(`Using model: ${model_to_use}`);
-        // ▲▲▲ 修改结束 ▲▲▲
 
         const payload = { model: model_to_use, messages: history };
         if (use_network) {
@@ -64,12 +62,18 @@ app.post('/api/ai-chat', async (req, res) => {
         const initialResponse = await deepseek.chat.completions.create(payload);
         const message = initialResponse.choices[0].message;
 
-        if (use_network && message.tool_calls) {
+        // ▼▼▼ 修改: 增加更健壮的判断条件 ▼▼▼
+        // 确保 tool_calls 是一个非空的数组
+        if (use_network && message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length > 0) {
+        // ▲▲▲ 修改结束 ▲▲▲
+
             history.push(message);
             const toolCall = message.tool_calls[0];
             const functionName = toolCall.function.name;
             const functionArgs = toolCall.function.arguments ? JSON.parse(toolCall.function.arguments) : {};
+            
             console.log(`AI decided to use the tool: ${functionName}`);
+            
             const toolToExecute = availableTools[functionName];
             if (toolToExecute) {
                 const toolResult = await toolToExecute(functionArgs);
@@ -78,9 +82,8 @@ app.post('/api/ai-chat', async (req, res) => {
                  const errorContent = `Error: Tool '${functionName}' not found.`;
                  history.push({ tool_call_id: toolCall.id, role: "tool", name: functionName, content: JSON.stringify({ error: errorContent })});
             }
-            // ▼▼▼ 修改: 确保最终调用也使用新模型 ▼▼▼
+            
             const finalResponse = await deepseek.chat.completions.create({ model: model_to_use, messages: history });
-            // ▲▲▲ 修改结束 ▲▲▲
             return res.json({ reply: finalResponse.choices[0].message.content });
         } else {
             return res.json({ reply: message.content });
