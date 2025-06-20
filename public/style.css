@@ -459,3 +459,13 @@ body.dragging-active { cursor: move; user-select: none; }
 .search-results-container .message-item:last-child {
     border-bottom: none;
 }
+/* --- ★★★ 搜索窗口最终高度修复 ★★★ --- */
+#search-window {
+    /* 给搜索窗口一个和主聊天窗口一样的高度 */
+    height: 450px; 
+    
+    /* 我们已经对 .search-window-body 使用了 flex-direction: column
+       所以这个窗口本身也需要是 flex 容器才能让内部布局生效 */
+    display: flex;
+    flex-direction: column;
+}
