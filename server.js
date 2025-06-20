@@ -1,4 +1,4 @@
-// server.js (FINAL AND CORRECT IMPLEMENTATION)
+// server.js (ULTIMATE FINAL CORRECTION FOR CJS/ESM INTEROP)
 
 require('dotenv').config();
 
@@ -19,7 +19,7 @@ const requiredEnvVars = [
     'DATABASE_URL',
     'DEEPSEEK_API_KEY',
     'GOOGLE_SEARCH_API_KEY', 'GOOGLE_SEARCH_CX',
-    'TAVILY_API_KEY' // 确保 Tavily key 在 Render 环境变量中
+    'TAVILY_API_KEY'
 ];
 
 for (const varName of requiredEnvVars) {
@@ -29,7 +29,7 @@ for (const varName of requiredEnvVars) {
     }
 }
 
-// --- 初始化服务 ---
+// --- 初始化各种服务 ---
 cloudinary.config({ cloud_name: process.env.CLOUDINARY_CLOUD_NAME, api_key: process.env.CLOUDINARY_API_KEY, api_secret: process.env.CLOUDINARY_API_SECRET });
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 const app = express();
@@ -48,26 +48,8 @@ app.post('/upload', upload.single('image'), (req, res) => { if (!req.file) { ret
 // --- 智能代理核心 ---
 
 const tools = [
-    {
-        type: "function",
-        function: {
-            name: "web_search",
-            description: "当需要回答通用问题、时事、人物、事件、定义，或者在没有更专业的工具可用时，使用此工具进行网络搜索。",
-            parameters: {
-                type: "object",
-                properties: { query: { type: "string", description: "用于搜索引擎的、简洁明了的搜索查询词。" } },
-                required: ["query"],
-            },
-        },
-    },
-    {
-        type: "function",
-        function: {
-            name: "get_current_time",
-            description: "获取当前的日期和时间。",
-            parameters: { type: "object", properties: {} },
-        },
-    }
+    { type: "function", function: { name: "web_search", description: "当需要回答通用问题、时事、人物、事件、定义，或者在没有更专业的工具可用时，使用此工具进行网络搜索。", parameters: { type: "object", properties: { query: { type: "string", description: "用于搜索引擎的、简洁明了的搜索查询词。" } }, required: ["query"], }, }, },
+    { type: "function", function: { name: "get_current_time", description: "获取当前的日期和时间。", parameters: { type: "object", properties: {} }, }, }
 ];
 
 async function searchWithGoogle({ query }) {
@@ -87,22 +69,32 @@ async function searchWithGoogle({ query }) {
     }
 }
 
+// ▼▼▼ ULTIMATE FINAL CORRECTION FOR TAVILY ▼▼▼
 async function searchWithTavily({ query }) {
     console.log(`Executing Tavily web_search with query: "${query}"`);
     try {
-        // 动态导入 ESM 包 @tavily/core
-        const { TavilyClient } = await import('@tavily/core');
-        // 在函数内实例化
+        // Step 1: Dynamically import the ESM package.
+        const TavilyModule = await import('@tavily/core');
+        
+        // Step 2: Access the constructor from the 'default' property of the imported module.
+        const TavilyClient = TavilyModule.default;
+        
+        // Step 3: Create the instance.
         const tavily = new TavilyClient({ apiKey: process.env.TAVILY_API_KEY });
+        
+        // Step 4: Call the search method.
         const response = await tavily.search(query, { search_depth: "advanced" });
         return JSON.stringify(response);
     } catch (error) {
         console.error("Tavily API error:", error);
+        // Also log the original error to see if it's the constructor issue or something else
+        console.error(error); 
         return JSON.stringify({ error: `Tavily API failed. Reason: ${error.message}` });
     }
 }
+// ▲▲▲ END ULTIMATE FINAL CORRECTION ▲▲▲
 
-// --- AI 聊天 API 路由 ---
+// AI 聊天 API 路由
 app.post('/api/ai-chat', async (req, res) => {
     const { history, use_network, search_provider = 'google' } = req.body;
 
