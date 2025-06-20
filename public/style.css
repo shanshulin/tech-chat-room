@@ -296,7 +296,21 @@ button:active {
 #users-list li::before { content: ''; display: inline-block; width: 16px; height: 16px; background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAKtJREFUOI1jZGBgEGHAD97/UP///wMYgABiJmJgZWBgrsDBxMTECPz//w+G/Pz8D6Y2NDSMpDU1NUOcAAmg9vj4CcPS0tJ/kNqSkhLgLDAw8D+amZkR5AAyINpiY2OF2YABiJkGgvz//w8GqJ2dnaGkYGalY2BgYWBgaGFh4X+GjIyMDKY9Pz8/yAFU4OJi438gSgEqYWBgYGRgYODj42NwsbCwsDDjPzAwUGMAAEV8Rv25pKyKAAAAAElFTkSuQmCC'); margin-right: 5px; }
 
 .chat-main { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
-.messages { flex-grow: 1; height: 300px; background: #fff; padding: 10px; overflow-y: scroll; border: 2px solid; border-top-color: #000; border-left-color: #000; border-right-color: #fff; border-bottom-color: #fff; margin-bottom: 10px; line-height: 1.4; text-align: left; }
+.messages { 
+    flex-grow: 1; 
+    height: 300px; 
+    background: #fff; 
+    padding: 10px; 
+    overflow-y: scroll; 
+    border: 2px solid; 
+    border-top-color: #000; 
+    border-left-color: #000; 
+    border-right-color: #fff; 
+    border-bottom-color: #fff; 
+    margin-bottom: 0; /* 修正点1：移除多余的间距 */
+    line-height: 1.4; 
+    text-align: left; 
+}
 .messages .system-message { text-align: center; color: #808080; }
 .messages .nickname { font-weight: bold; }
 
@@ -304,11 +318,12 @@ button:active {
 .chat-input-area { 
     display: flex; 
     flex-shrink: 0; 
-    align-items: center; /* 关键：让输入框和按钮垂直居中对齐 */
+    align-items: center; 
+    padding: 4px 0; /* 增加一点内边距，让输入区域更协调 */
 }
 
 #input, #ai-input { 
-    flex: 1; /* <-- 修正点：替换 width: 100% */
+    flex: 1; 
     margin: 0; 
     margin-right: 10px;
     padding: 5px;
@@ -320,12 +335,36 @@ button:active {
     background: #ffffff;
     font-family: 'VT323', monospace;
     font-size: 16px;
+    height: 30px; /* 修正点2：强制设定高度 */
+    box-sizing: border-box; /* 修正点2：统一盒子模型 */
 }
-#send-btn, #ai-send-btn { width: 80px; }
+
+#send-btn, #ai-send-btn { 
+    width: 80px; 
+    height: 30px; /* 修正点2：强制设定高度 */
+    box-sizing: border-box; /* 修正点2：统一盒子模型 */
+    padding: 0 15px; /* 修正点2：调整内边距以适应固定高度 */
+}
+
 .timestamp { color: #808080; margin-right: 8px; font-size: 14px; }
 
-.toolbar { position: relative; border-top: 2px solid #808080; padding: 2px; display: flex; gap: 2px; flex-shrink: 0; }
-.toolbar-btn { width: auto; height: 28px; padding: 0 8px; font-size: 16px; line-height: 28px; }
+.toolbar { 
+    position: relative; 
+    border-top: 2px solid #808080; 
+    padding: 4px 2px; /* 微调内边距 */
+    display: flex; 
+    gap: 2px; 
+    flex-shrink: 0; 
+}
+
+.toolbar-btn { 
+    width: auto; 
+    height: 28px; 
+    padding: 0 8px; 
+    font-size: 16px; 
+    line-height: 28px; 
+}
+
 .emoji-panel { position: absolute; bottom: 100%; left: 0; background: #c0c0c0; border: 1px solid; border-top-color: #ffffff; border-left-color: #ffffff; border-right-color: #000000; border-bottom-color: #000000; padding: 5px; display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 5px; box-shadow: 1px 1px 0 #000; width: 100%; box-sizing: border-box; }
 .emoji-panel.hidden { display: none; }
 .emoji-item { padding: 5px; text-align: center; cursor: pointer; border: 1px solid transparent; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
