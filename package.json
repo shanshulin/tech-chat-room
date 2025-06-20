@@ -22,6 +22,7 @@
     "iconv-lite": "^0.6.3",
     "multer": "^2.0.1",
     "node-fetch": "^2.7.0",
+    "openai": "^5.5.1",
     "pg": "^8.16.1",
     "rss-parser": "^3.13.0",
     "socket.io": "^4.8.1",

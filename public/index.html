@@ -19,6 +19,13 @@
             <img src="rss.ico" alt="RSS Icon">
             <span>RSS 阅读器.exe</span>
         </div>
+        
+        <!-- ▼▼▼ 新增 AI 机器人桌面图标 ▼▼▼ -->
+        <div id="ai-app-icon" class="desktop-icon">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAKvSURBVFhH7ZddSFRhGMd/d85cuuacmXNOWTqXSmVpBQUFRfQDoeiHBVEgBC+Loj6kKCiioJ76ICoKiiDoIfQjqIcgKIIUKTMrS0szpbv/+/beO+fO3TtnzsyzL/s/5pnnnO/z/D7feR5nBCxgARvYIvB/BIgGq4FqIBWIBy3gGngDPoEP4C7Q4g54Az6AG+A+S9jAfeA+OEuymTPgQZABGoEi4XewDdwD3gGbgAdgO/gMnoGT4DVwHegGfgSrgM1gEHgf9IET4CawEagGGoE+sA3cBO4DG0AH6AZnQTRoA1eBfWAYWAsmQQsYBy7gWsgD0y1gDjgCLgPXgS/B8h/BGeAbWAQ2gZsh/gU8A8eBx0AjsBAsgS+hC/wbWAg2gY3gKpgCJvwe2g58CqZANHgbzIXt4DVwGXgYtARzQBdoBT2gA3QCvYEOUAfaQDwoA/FghogH40AcGAfCgQnQAHaBCtACGoDGoAU0gFagDzwP/gFfgX/hJkga/Ae+B/+A/+A98B/4AvyHtwD/wA+gEfg//A38H/4H/gd/gH/D7wT+h7eB/8Ff4D/wM4B/z/eA35U1wP9wD/gbXAX+g5+A/8NdwD/nB+A/cA/4G7wD/Aeugv/BDeB/cBv4D7wA/oObwP/gpqj+M/A/+A1sBP+BW8D/4BawF3wH/gf3gD9AF9gCtvwezgE/gFbgL3AUeB58AeZDJfg1tAWOgVdgKdgChsBTYBnYBWbBfLAd7AZnwT7QBHbCGeAmsAwsh9tBDBgLBsHysB5Mgt1gMdgCJsAEuAyugp1gLxgHNsPJsBDsAsPhYmAP2AgOwG74HrgJ/AhOAzvBEXAc9IFb4Tq4BnyP5+A++I/V4X7QCzwPOkAPOAvSgT7QBJqBbuBqMA90gz5wBqQDr+P/DqTBC/AfuB4cA4fhPrAFHAbHwG74X/gW/iPdwO3gMHARbIID4BzYDL7E61AFBoEocCisgW0h+DswA7aDlbADnAfHwGFwFBwCh+AocAwcAsdgCjgEh8Bx4BicBEfAYXACnAGHwGlwAhyG0+AEOASnwAlwFE6AU+AInAKnwBE4Ba/ADbgBbsMreAUuwSvwClyCV+AWuAWuwCtww12fAxeBq8Bl4Dq4GjwPXgeuA9ehS4CLwA1wHXgJuApcBC4CV4CrwDXgeuAqcA14FbgKXAUugauB68A14BpIDbgOXE+HBHBDgqA08L2KjM+fC/8B3mZ0pE48W2YAAAAASUVORK5CYII=" alt="AI Icon">
+            <span>DeepSeek AI.exe</span>
+        </div>
+        <!-- ▲▲▲ 新增结束 ▲▲▲ -->
 
         <div id="login-screen" class="window screen">
             <div class="title-bar"><span class="title-bar-text">糯米团 - 用户登录</span><div class="title-bar-controls"><button class="button-control" id="login-close-btn">X</button></div></div>
@@ -39,10 +46,10 @@
                     <button class="button-control" id="chat-close-btn">X</button>
                 </div>
             </div>
-            <div class="chat-container">
+            <div class="chat-container window-body">
                 <div id="users-list-container"><p>在线用户:</p><ul id="users-list"></ul></div>
                 <div class="chat-main">
-                    <div id="messages"></div>
+                    <div id="messages" class="messages"></div>
                     <div class="toolbar"><div id="emoji-panel" class="emoji-panel hidden"></div><button id="emoji-btn" class="toolbar-btn">(^o^)/</button><button id="image-btn" class="toolbar-btn">🖼️</button><input type="file" id="image-upload-input" accept="image/*" style="display: none;"><button id="search-btn" class="toolbar-btn">🔍</button></div>
                     <div class="chat-input-area"><input id="input" autocomplete="off" placeholder="在这里输入消息或粘贴图片..." /><button id="send-btn">发送</button></div>
                 </div>
@@ -53,7 +60,7 @@
         
         <div id="search-window" class="window screen">
             <div class="title-bar"><span class="title-bar-text">查找聊天记录</span><div class="title-bar-controls"><button class="button-control" id="search-close-btn">X</button></div></div>
-            <div class="search-window-body">
+            <div class="search-window-body window-body">
                 <div class="search-controls">
                     <div class="control-group"><label for="search-username">用户名:</label><input type="text" id="search-username"></div>
                     <div class="control-group"><label for="search-keyword">关键字:</label><input type="text" id="search-keyword"></div>
@@ -64,7 +71,6 @@
             </div>
         </div>
 
-        <!-- ▼▼▼ RSS阅读器结构重大更新 ▼▼▼ -->
         <div id="rss-reader-screen" class="window screen" style="max-width: 900px;">
             <div class="title-bar">
                 <span class="title-bar-text">Netscape RSS Navigator</span>
@@ -83,17 +89,12 @@
             <div class="location-bar">
                 <label for="rss-url-input">Location:</label><input type="text" id="rss-url-input" value="https://rsshub.app/theverge"><button id="fetch-rss-btn">Go</button>
             </div>
-            <div class="rss-main-content">
-                <!-- 左栏：书签 -->
+            <div class="rss-main-content window-body">
                 <div id="rss-bookmarks-panel" class="sunken-panel">
                     <h4>Bookmarks</h4>
                     <ul id="bookmarks-list"></ul>
                 </div>
-                <!-- 中栏：文章列表 -->
-                <div id="rss-list-panel" class="sunken-panel">
-                    <!-- 文章列表将由JS动态填充 -->
-                </div>
-                <!-- 右栏：文章详情 -->
+                <div id="rss-list-panel" class="sunken-panel"></div>
                 <div id="rss-article-panel" class="sunken-panel">
                     <p>Select an item from the list to read.</p>
                 </div>
@@ -103,7 +104,31 @@
                 <p id="rss-item-count" class="status-bar-field"></p>
             </div>
         </div>
-        <!-- ▲▲▲ RSS阅读器结构更新结束 ▲▲▲ -->
+        
+        <!-- ▼▼▼ 新增 AI 聊天机器人窗口 ▼▼▼ -->
+        <div id="ai-chat-screen" class="chat-window window screen">
+            <div class="title-bar">
+                <span class="title-bar-text">DeepSeek AI Assistant</span>
+                <div class="title-bar-controls">
+                    <button class="button-control" id="ai-minimize-btn">_</button>
+                    <button class="button-control" id="ai-maximize-btn">❐</button>
+                    <button class="button-control" id="ai-close-btn">X</button>
+                </div>
+            </div>
+            <div class="chat-container window-body">
+                <div class="chat-main">
+                    <div id="ai-messages" class="messages">
+                        <div class="ai-message"><b>AI:</b> 您好！今天有什么可以帮您的吗？</div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input id="ai-input" autocomplete="off" placeholder="向AI提问..." />
+                        <button id="ai-send-btn">发送</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- ▲▲▲ 新增结束 ▲▲▲ -->
+
     </div> 
     
     <div id="taskbar">

@@ -202,8 +202,7 @@ body {
 
 /* --- 按钮和输入框 --- */
 input[type="password"],
-input[type="text"],
-#input {
+input[type="text"] {
     width: 90%;
     padding: 5px;
     border: 2px solid;
@@ -268,18 +267,31 @@ button:active {
     flex-shrink: 0;
 }
 
-#users-list-container p { margin: 0 0 10px; font-weight: bold; }
-#users-list { list-style: none; padding: 0; margin: 0; max-height: 300px; overflow-y: auto; }
+#users-list-container p { margin: 0 0 10px; font-weight: bold; text-align: left;}
+#users-list { list-style: none; padding: 0; margin: 0; max-height: 300px; overflow-y: auto; text-align: left;}
 #users-list li { padding: 2px 5px; margin-bottom: 5px; display: flex; align-items: center; }
 #users-list li::before { content: ''; display: inline-block; width: 16px; height: 16px; background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAKtJREFUOI1jZGBgEGHAD97/UP///wMYgABiJmJgZWBgrsDBxMTECPz//w+G/Pz8D6Y2NDSMpDU1NUOcAAmg9vj4CcPS0tJ/kNqSkhLgLDAw8D+amZkR5AAyINpiY2OF2YABiJkGgvz//w8GqJ2dnaGkYGalY2BgYWBgaGFh4X+GjIyMDKY9Pz8/yAFU4OJi438gSgEqYWBgYGRgYODj42NwsbCwsDDjPzAwUGMAAEV8Rv25pKyKAAAAAElFTkSuQmCC'); margin-right: 5px; }
 
 .chat-main { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
-#messages { flex-grow: 1; height: 300px; background: #fff; padding: 10px; overflow-y: scroll; border: 2px solid; border-top-color: #000; border-left-color: #000; border-right-color: #fff; border-bottom-color: #fff; margin-bottom: 10px; line-height: 1.4; text-align: left; }
-#messages .system-message { text-align: center; color: #808080; }
-#messages .nickname { font-weight: bold; }
+.messages { flex-grow: 1; height: 300px; background: #fff; padding: 10px; overflow-y: scroll; border: 2px solid; border-top-color: #000; border-left-color: #000; border-right-color: #fff; border-bottom-color: #fff; margin-bottom: 10px; line-height: 1.4; text-align: left; }
+.messages .system-message { text-align: center; color: #808080; }
+.messages .nickname { font-weight: bold; }
 .chat-input-area { display: flex; flex-shrink: 0; }
-#input { width: 100%; margin: 0; margin-right: 10px; }
-#send-btn { width: 80px; }
+#input, #ai-input { 
+    width: 100%; 
+    margin: 0; 
+    margin-right: 10px;
+    padding: 5px;
+    border: 2px solid;
+    border-top-color: #000000;
+    border-left-color: #000000;
+    border-right-color: #ffffff;
+    border-bottom-color: #ffffff;
+    background: #ffffff;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+}
+#send-btn, #ai-send-btn { width: 80px; }
 .timestamp { color: #808080; margin-right: 8px; font-size: 14px; }
 
 /* --- 工具栏和表情面板 --- */
@@ -303,6 +315,7 @@ button:active {
 .close-btn:hover, .close-btn:focus { color: #bbb; text-decoration: none; }
 
 /* --- 查询窗口样式 --- */
+.search-window-body { padding: 0 !important;}
 /* ... (查询窗口样式保持不变) ... */
 
 /* --- Netscape风格的RSS阅读器样式 --- */
@@ -315,7 +328,6 @@ button:active {
 .location-bar label { font-weight: bold; }
 .location-bar input { flex-grow: 1; width: auto; }
 
-/* ▼▼▼ RSS三栏式布局核心样式 ▼▼▼ */
 .rss-main-content {
     display: flex;
     flex-grow: 1;
@@ -338,8 +350,8 @@ button:active {
     display: none;
 }
 #rss-bookmarks-panel.active { display: block; }
-#rss-bookmarks-panel h4 { margin: 0 0 10px; padding-bottom: 5px; border-bottom: 1px solid #808080; }
-#bookmarks-list { list-style: none; padding: 0; margin: 0; }
+#rss-bookmarks-panel h4 { margin: 0 0 10px; padding-bottom: 5px; border-bottom: 1px solid #808080; text-align: left;}
+#bookmarks-list { list-style: none; padding: 0; margin: 0; text-align: left;}
 #bookmarks-list li { padding: 4px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #bookmarks-list li:hover { background: #000080; color: white; }
 
@@ -352,6 +364,7 @@ button:active {
     padding: 8px 10px;
     cursor: pointer;
     border-bottom: 1px dotted #ccc;
+    text-align: left;
 }
 .rss-list-item:hover { background-color: #f0f0f0; }
 .rss-list-item.active { background-color: #000080; color: #ffffff; }
@@ -367,10 +380,9 @@ button:active {
 #rss-article-panel h2 { margin: 0 0 15px; font-size: 1.4em; padding-bottom: 10px; border-bottom: 1px solid #808080; }
 #rss-article-panel a { color: #0000ff; text-decoration: underline; }
 #rss-article-panel img { max-width: 100%; height: auto; margin: 10px 0; }
-/* ▲▲▲ RSS三栏式布局核心样式结束 ▲▲▲ */
 
 .status-bar { display: flex; border-top: 1px solid #808080; padding: 2px 4px; flex-shrink: 0; }
-.status-bar-field { border: 1px solid; border-color: #808080 #fff #fff #808080; padding: 0 5px; margin: 0 2px; line-height: 20px; min-width: 100px; }
+.status-bar-field { border: 1px solid; border-color: #808080 #fff #fff #808080; padding: 0 5px; margin: 0 2px; line-height: 20px; min-width: 100px; text-align: left;}
 
 /* --- 窗口最大化样式 --- */
 .window.maximized {
@@ -393,3 +405,26 @@ button:active {
 /* --- 窗口拖拽样式 --- */
 .title-bar { cursor: move; }
 body.dragging-active { cursor: move; user-select: none; }
+
+/* ▼▼▼ 新增 AI 聊天窗口样式 ▼▼▼ */
+.messages .user-message {
+    text-align: right;
+    margin-left: 40px;
+    color: #000080; /* 用户消息用深蓝色 */
+    padding: 2px 0;
+}
+.messages .ai-message {
+    text-align: left;
+    margin-right: 40px;
+    color: #008000; /* AI 消息用深绿色 */
+    padding: 2px 0;
+}
+.messages .ai-message b {
+    color: #000; /* "AI:" 标识用黑色 */
+}
+.messages .thinking-message {
+    text-align: center;
+    color: #808080;
+    font-style: italic;
+}
+/* ▲▲▲ 新增结束 ▲▲▲ */

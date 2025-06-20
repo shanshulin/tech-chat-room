@@ -7,13 +7,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskbarApps = document.getElementById('taskbar-apps');
     const clockElement = document.getElementById('clock');
     
+    // ▼▼▼ apps 对象中新增 'ai' ▼▼▼
     const apps = {
         'chat': { icon: document.getElementById('chat-app-icon'), window: document.getElementById('chat-screen'), closeBtn: document.getElementById('chat-close-btn'), minimizeBtn: document.getElementById('minimize-btn'), maximizeBtn: document.getElementById('maximize-btn'), title: '糯米团 v1.0' },
         'rss': { icon: document.getElementById('rss-reader-icon'), window: document.getElementById('rss-reader-screen'), closeBtn: document.getElementById('rss-close-btn'), minimizeBtn: document.getElementById('rss-minimize-btn'), maximizeBtn: document.getElementById('rss-maximize-btn'), title: 'Netscape RSS' },
+        'ai': { icon: document.getElementById('ai-app-icon'), window: document.getElementById('ai-chat-screen'), closeBtn: document.getElementById('ai-close-btn'), minimizeBtn: document.getElementById('ai-minimize-btn'), maximizeBtn: document.getElementById('ai-maximize-btn'), title: 'DeepSeek AI' },
         'login': { window: document.getElementById('login-screen'), closeBtn: document.getElementById('login-close-btn') },
         'nickname': { window: document.getElementById('nickname-screen'), closeBtn: document.getElementById('nickname-close-btn') },
         'search': { window: document.getElementById('search-window'), closeBtn: document.getElementById('search-close-btn') }
     };
+    // ▲▲▲ 新增结束 ▲▲▲
 
     const loginBtn = document.getElementById('login-btn');
     const passwordInput = document.getElementById('password-input');
@@ -50,6 +53,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const rssBookmarksBtn = document.getElementById('rss-bookmarks-btn');
     const rssBookmarksPanel = document.getElementById('rss-bookmarks-panel');
     const bookmarksList = document.getElementById('bookmarks-list');
+
+    // ▼▼▼ 新增 AI 机器人相关元素 ▼▼▼
+    const aiMessages = document.getElementById('ai-messages');
+    const aiInput = document.getElementById('ai-input');
+    const aiSendBtn = document.getElementById('ai-send-btn');
+    // ▲▲▲ 新增结束 ▲▲▲
     
     // --- 状态变量 ---
     const socket = io({ reconnection: true, reconnectionDelay: 1000, reconnectionDelayMax: 5000, reconnectionAttempts: Infinity });
@@ -62,7 +71,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let rssCurrentIndex = -1;
     let bookmarks = JSON.parse(localStorage.getItem('rss_bookmarks')) || [];
     let currentFeedTitle = '';
-    let currentFeedItems = []; // 用于存储当前Feed的所有文章数据
+    let currentFeedItems = [];
+
+    // ▼▼▼ 新增 AI 机器人状态变量 ▼▼▼
+    let aiConversationHistory = [{ role: 'system', content: 'You are a helpful assistant.' }];
+    // ▲▲▲ 新增结束 ▲▲▲
 
     // --- 窗口管理器 ---
     const windowManager = { /* ... (窗口管理器代码保持不变) ... */ };
@@ -70,13 +83,9 @@ document.addEventListener('DOMContentLoaded', () => {
         open(appId) {
             const app = apps[appId];
             if (!app || !app.window) return;
-            
             app.window.classList.add('active');
             this.focus(appId);
-
-            if (app.icon) {
-                this.createTaskbarTab(appId);
-            }
+            if (app.icon) this.createTaskbarTab(appId);
         },
         close(appId) {
             const app = apps[appId];
@@ -98,7 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
         toggle(appId) {
             const app = apps[appId];
             if (!app || !app.window) return;
-             
             if (app.window.classList.contains('active')) {
                 this.minimize(appId);
             } else {
@@ -110,28 +118,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const app = apps[appId];
             if (!app || !app.window) return;
             app.window.style.zIndex = ++zIndexCounter;
-
             document.querySelectorAll('.taskbar-tab').forEach(t => t.classList.remove('active', 'inactive'));
-
             document.querySelectorAll('.taskbar-tab').forEach(t => {
                 if(t.id !== `${appId}-taskbar-tab`) t.classList.add('inactive');
             });
-            
             const taskbarTab = document.getElementById(`${appId}-taskbar-tab`);
-            if (taskbarTab) {
-                taskbarTab.classList.add('active');
-            }
+            if (taskbarTab) taskbarTab.classList.add('active');
         },
         createTaskbarTab(appId) {
             const app = apps[appId];
             if (document.getElementById(`${appId}-taskbar-tab`)) return;
-
             const taskbarTab = document.createElement('div');
             taskbarTab.id = `${appId}-taskbar-tab`;
             taskbarTab.className = 'taskbar-tab active';
             taskbarTab.textContent = app.title;
             taskbarApps.appendChild(taskbarTab);
-
             taskbarTab.addEventListener('click', () => this.toggle(appId));
         }
     });
@@ -165,102 +166,79 @@ document.addEventListener('DOMContentLoaded', () => {
     function createChatMessageElement(data) { const item = document.createElement('div'); item.className = 'message-item'; const timestampSpan = document.createElement('span'); timestampSpan.className = 'timestamp'; const date = new Date(data.created_at || Date.now()); timestampSpan.textContent = `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2,'0')}/${String(date.getDate()).padStart(2,'0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`; const nicknameSpan = document.createElement('span'); nicknameSpan.className = 'nickname'; nicknameSpan.textContent = `<${data.nickname}>: `; const contentSpan = document.createElement('span'); const messageContent = data.msg || ''; if (data.message_type === 'image') { const img = document.createElement('img'); img.src = messageContent; img.className = 'chat-image'; contentSpan.appendChild(img); } else { let finalMessage = messageContent; for (const code in KAOMOJI_MAP) { const regex = new RegExp(code.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'); finalMessage = finalMessage.replace(regex, KAOMOJI_MAP[code]); } contentSpan.textContent = finalMessage; } item.appendChild(timestampSpan); item.appendChild(nicknameSpan); item.appendChild(contentSpan); return item; }
     function addChatMessage(data) { const item = createChatMessageElement(data); messages.appendChild(item); messages.scrollTop = messages.scrollHeight; }
     async function uploadImage(file) { if (!file || !file.type.startsWith('image/')) return; addSystemMessage(`正在上传图片: ${file.name || 'clipboard_image.png'}...`); const formData = new FormData(); formData.append('image', file); try { const response = await fetch('/upload', { method: 'POST', body: formData }); if (!response.ok) throw new Error('上传失败'); const result = await response.json(); socket.emit('chat message', { type: 'image', msg: result.imageUrl }); } catch (error) { console.error('上传出错:', error); addSystemMessage(`图片上传失败。`); } }
-    function populateDateSelectors() { /* ... (日期选择器代码保持不变) ... */ }
     function updateClock() { const now = new Date(); const hours = String(now.getHours()).padStart(2, '0'); const minutes = String(now.getMinutes()).padStart(2, '0'); clockElement.textContent = `${hours}:${minutes}`; }
 
-    // ▼▼▼ RSS功能核心逻辑更新 ▼▼▼
-    async function fetchRss(url, addToHistory = true) {
-        if (!url) { alert('请输入一个有效的RSS源地址！'); return; }
-        rssStatusText.textContent = `Loading ${url}...`;
-        rssListPanel.innerHTML = '';
-        rssArticlePanel.innerHTML = '<p>Select an item from the list to read.</p>';
-        rssItemCount.textContent = '';
+    // ▼▼▼ 新增: AI 聊天核心功能 ▼▼▼
+    function addAiChatMessage(role, text) {
+        const item = document.createElement('div');
+        if (role === 'user') {
+            item.className = 'user-message';
+            item.textContent = `You: ${text}`;
+        } else if (role === 'assistant') {
+            item.className = 'ai-message';
+            item.innerHTML = `<b>AI:</b> ${text}`;
+        } else if (role === 'thinking') {
+            item.className = 'thinking-message';
+            item.id = 'thinking-indicator';
+            item.textContent = 'AI is thinking...';
+        } else if (role === 'error') {
+            item.className = 'system-message';
+            item.textContent = `*** Error: ${text} ***`;
+        }
+        aiMessages.appendChild(item);
+        aiMessages.scrollTop = aiMessages.scrollHeight;
+        return item;
+    }
+
+    async function sendAiMessage() {
+        const messageText = aiInput.value.trim();
+        if (!messageText) return;
+
+        addAiChatMessage('user', messageText);
+        aiConversationHistory.push({ role: 'user', content: messageText });
+        aiInput.value = '';
+        aiInput.disabled = true;
+        aiSendBtn.disabled = true;
+
+        const thinkingIndicator = addAiChatMessage('thinking');
+
         try {
-            const response = await fetch(`/parse-rss?url=${encodeURIComponent(url)}`);
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || '无法解析RSS源');
-            }
-            const feed = await response.json();
-            rssUrlInput.value = url;
-            currentFeedTitle = feed.title || 'Untitled Feed';
-            currentFeedItems = feed.items || [];
-            displayRssList(feed);
-            if (addToHistory) {
-                rssHistory = rssHistory.slice(0, rssCurrentIndex + 1);
-                rssHistory.push(url);
-                rssCurrentIndex++;
-            }
-            updateRssNavButtons();
-        } catch (error) {
-            rssStatusText.textContent = `Error!`;
-            rssListPanel.innerHTML = `<p style="padding: 10px;">加载失败: ${error.message}</p>`;
-        }
-    }
-
-    function displayRssList(feed) {
-        rssListPanel.innerHTML = '';
-        if (currentFeedItems.length > 0) {
-            currentFeedItems.forEach((item, index) => {
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'rss-list-item';
-                
-                const itemTitle = document.createElement('h3');
-                itemTitle.textContent = item.title || 'No Title';
-                const itemDate = document.createElement('p');
-                itemDate.textContent = item.pubDate ? new Date(item.pubDate).toLocaleString() : '未知日期';
-                
-                itemDiv.appendChild(itemTitle);
-                itemDiv.appendChild(itemDate);
-
-                itemDiv.addEventListener('click', () => {
-                    displayArticleContent(index);
-                    document.querySelectorAll('.rss-list-item').forEach(el => el.classList.remove('active'));
-                    itemDiv.classList.add('active');
-                });
-                rssListPanel.appendChild(itemDiv);
+            const response = await fetch('/api/ai-chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ history: aiConversationHistory })
             });
-            rssStatusText.textContent = 'Done';
-            rssItemCount.textContent = `${currentFeedItems.length} items`;
-            if (currentFeedItems.length > 0) {
-                displayArticleContent(0);
-                rssListPanel.querySelector('.rss-list-item').classList.add('active');
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || 'AI service returned an error.');
             }
-        } else {
-            rssListPanel.innerHTML = '<p style="padding: 10px;">这个RSS源中没有文章。</p>';
-            rssStatusText.textContent = 'Done';
-            rssItemCount.textContent = '0 items';
+
+            const data = await response.json();
+            addAiChatMessage('assistant', data.reply);
+            aiConversationHistory.push({ role: 'assistant', content: data.reply });
+
+        } catch (error) {
+            console.error('AI Chat Error:', error);
+            addAiChatMessage('error', error.message);
+        } finally {
+            if (thinkingIndicator) thinkingIndicator.remove();
+            aiInput.disabled = false;
+            aiSendBtn.disabled = false;
+            aiInput.focus();
         }
     }
+    // ▲▲▲ 新增结束 ▲▲▲
 
-    function displayArticleContent(index) {
-        const item = currentFeedItems[index];
-        if (!item) return;
-
-        rssArticlePanel.innerHTML = '';
-
-        const title = document.createElement('h2');
-        const titleLink = document.createElement('a');
-        titleLink.href = item.link;
-        titleLink.textContent = item.title || 'No Title';
-        titleLink.target = '_blank';
-        title.appendChild(titleLink);
-
-        const content = document.createElement('div');
-        content.innerHTML = item.content || item.contentSnippet || '<p>No content available.</p>';
-        
-        rssArticlePanel.appendChild(title);
-        rssArticlePanel.appendChild(content);
-        rssArticlePanel.scrollTop = 0;
-    }
-    // ▲▲▲ RSS功能核心逻辑更新结束 ▲▲▲
-
+    // ... (RSS 功能函数保持不变) ...
+    async function fetchRss(url, addToHistory = true) { if (!url) { alert('请输入一个有效的RSS源地址！'); return; } rssStatusText.textContent = `Loading ${url}...`; rssListPanel.innerHTML = ''; rssArticlePanel.innerHTML = '<p>Select an item from the list to read.</p>'; rssItemCount.textContent = ''; try { const response = await fetch(`/parse-rss?url=${encodeURIComponent(url)}`); if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.error || '无法解析RSS源'); } const feed = await response.json(); rssUrlInput.value = url; currentFeedTitle = feed.title || 'Untitled Feed'; currentFeedItems = feed.items || []; displayRssList(feed); if (addToHistory) { rssHistory = rssHistory.slice(0, rssCurrentIndex + 1); rssHistory.push(url); rssCurrentIndex++; } updateRssNavButtons(); } catch (error) { rssStatusText.textContent = `Error!`; rssListPanel.innerHTML = `<p style="padding: 10px;">加载失败: ${error.message}</p>`; } }
+    function displayRssList(feed) { rssListPanel.innerHTML = ''; if (currentFeedItems.length > 0) { currentFeedItems.forEach((item, index) => { const itemDiv = document.createElement('div'); itemDiv.className = 'rss-list-item'; const itemTitle = document.createElement('h3'); itemTitle.textContent = item.title || 'No Title'; const itemDate = document.createElement('p'); itemDate.textContent = item.pubDate ? new Date(item.pubDate).toLocaleString() : '未知日期'; itemDiv.appendChild(itemTitle); itemDiv.appendChild(itemDate); itemDiv.addEventListener('click', () => { displayArticleContent(index); document.querySelectorAll('.rss-list-item').forEach(el => el.classList.remove('active')); itemDiv.classList.add('active'); }); rssListPanel.appendChild(itemDiv); }); rssStatusText.textContent = 'Done'; rssItemCount.textContent = `${currentFeedItems.length} items`; if (currentFeedItems.length > 0) { displayArticleContent(0); rssListPanel.querySelector('.rss-list-item').classList.add('active'); } } else { rssListPanel.innerHTML = '<p style="padding: 10px;">这个RSS源中没有文章。</p>'; rssStatusText.textContent = 'Done'; rssItemCount.textContent = '0 items'; } }
+    function displayArticleContent(index) { const item = currentFeedItems[index]; if (!item) return; rssArticlePanel.innerHTML = ''; const title = document.createElement('h2'); const titleLink = document.createElement('a'); titleLink.href = item.link; titleLink.textContent = item.title || 'No Title'; titleLink.target = '_blank'; title.appendChild(titleLink); const content = document.createElement('div'); content.innerHTML = item.content || item.contentSnippet || '<p>No content available.</p>'; rssArticlePanel.appendChild(title); rssArticlePanel.appendChild(content); rssArticlePanel.scrollTop = 0; }
     function updateRssNavButtons() { rssBackBtn.disabled = rssCurrentIndex <= 0; rssForwardBtn.disabled = rssCurrentIndex >= rssHistory.length - 1; }
     function loadBookmarks() { bookmarksList.innerHTML = ''; bookmarks.forEach(bookmark => { const li = document.createElement('li'); li.textContent = bookmark.title; li.title = bookmark.url; li.addEventListener('click', () => { fetchRss(bookmark.url); }); bookmarksList.appendChild(li); }); }
     function saveBookmark(title, url) { if (!bookmarks.some(b => b.url === url)) { bookmarks.push({ title, url }); localStorage.setItem('rss_bookmarks', JSON.stringify(bookmarks)); loadBookmarks(); alert(`书签 "${title}" 已添加!`); } else { alert('这个书签已经存在了。'); } }
 
     // --- 事件绑定 ---
-    // ... (其他事件绑定保持不变) ...
     Object.keys(apps).forEach(appId => {
         const app = apps[appId];
         if (app.window) {
@@ -297,14 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
     imageUploadInput.addEventListener('change', (event) => { const file = event.target.files[0]; if (file) uploadImage(file); event.target.value = ''; });
     input.addEventListener('paste', (e) => {
         const items = (e.clipboardData || window.clipboardData).items;
-        for (const item of items) {
-            if (item.kind === 'file' && item.type.startsWith('image/')) {
-                e.preventDefault();
-                const file = item.getAsFile();
-                if (file) { uploadImage(file); }
-                return;
-            }
-        }
+        for (const item of items) { if (item.kind === 'file' && item.type.startsWith('image/')) { e.preventDefault(); const file = item.getAsFile(); if (file) { uploadImage(file); } return; } }
     });
 
     emojiBtn.addEventListener('click', (e) => { e.stopPropagation(); emojiPanel.classList.toggle('hidden'); });
@@ -322,17 +293,15 @@ document.addEventListener('DOMContentLoaded', () => {
     rssBookmarksBtn.addEventListener('click', () => rssBookmarksPanel.classList.toggle('active'));
     rssAddBookmarkBtn.addEventListener('click', () => {
         const url = rssUrlInput.value.trim();
-        if (url) {
-            const title = prompt("请输入书签的名称:", currentFeedTitle || url);
-            if (title) saveBookmark(title, url);
-        } else {
-            alert('地址栏是空的，无法添加书签。');
-        }
+        if (url) { const title = prompt("请输入书签的名称:", currentFeedTitle || url); if (title) saveBookmark(title, url); } else { alert('地址栏是空的，无法添加书签。'); }
     });
+    
+    // ▼▼▼ 新增: AI 聊天事件绑定 ▼▼▼
+    aiSendBtn.addEventListener('click', sendAiMessage);
+    aiInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendAiMessage(); });
+    // ▲▲▲ 新增结束 ▲▲▲
 
     // --- 初始化 ---
-    // ... (初始化代码保持不变) ...
-    // populateDateSelectors();
     updateClock();
     setInterval(updateClock, 1000 * 30);
     loadBookmarks();

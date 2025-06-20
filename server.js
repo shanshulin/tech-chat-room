@@ -13,6 +13,9 @@ const path = require('path');
 const Parser = require('rss-parser');
 const iconv = require('iconv-lite');
 const streamifier = require('streamifier');
+// ▼▼▼ 新增: 引入 openai 库 ▼▼▼
+const OpenAI = require('openai');
+// ▲▲▲ 新增结束 ▲▲▲
 
 const parser = new Parser();
 
@@ -21,10 +24,12 @@ const cache = new Map();
 const CACHE_DURATION = 10 * 60 * 1000; // 缓存10分钟
 
 // --- 全局配置 ---
-if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.DATABASE_URL) {
-    console.error("FATAL ERROR: Missing CLOUDINARY or DATABASE_URL environment variables.");
+// ▼▼▼ 新增: 检查 DEEPSEEK_API_KEY 是否存在 ▼▼▼
+if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.DATABASE_URL || !process.env.DEEPSEEK_API_KEY) {
+    console.error("FATAL ERROR: Missing CLOUDINARY, DATABASE_URL, or DEEPSEEK_API_KEY environment variables.");
     process.exit(1);
 }
+// ▲▲▲ 新增结束 ▲▲▲
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -43,6 +48,13 @@ const io = new Server(server);
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
+
+// ▼▼▼ 新增: 初始化 OpenAI 客户端，指向 DeepSeek API ▼▼▼
+const deepseek = new OpenAI({
+  apiKey: process.env.DEEPSEEK_API_KEY,
+  baseURL: 'https://api.deepseek.com/v1',
+});
+// ▲▲▲ 新增结束 ▲▲▲
 
 // --- 数据库初始化 ---
 async function initializeDatabase() {
@@ -65,8 +77,11 @@ async function initializeDatabase() {
   }
 }
 
-// --- 静态文件服务 ---
+// --- 静态文件和中间件 ---
 app.use(express.static(path.join(__dirname, 'public')));
+// ▼▼▼ 新增: 用于解析AI聊天请求的JSON body ▼▼▼
+app.use(express.json());
+// ▲▲▲ 新增结束 ▲▲▲
 
 
 // --- API 路由 ---
@@ -145,6 +160,30 @@ app.get('/parse-rss', (req, res) => {
         res.status(502).json({ error: 'Bad Gateway: Could not fetch the RSS feed from the URL.' });
     });
 });
+
+// ▼▼▼ 新增: AI 聊天 API 路由 ▼▼▼
+app.post('/api/ai-chat', async (req, res) => {
+    const { history } = req.body;
+
+    if (!history || !Array.isArray(history) || history.length === 0) {
+        return res.status(400).json({ error: 'Conversation history is required.' });
+    }
+
+    try {
+        const completion = await deepseek.chat.completions.create({
+            model: "deepseek-chat",
+            messages: history,
+        });
+
+        const reply = completion.choices[0].message.content;
+        res.json({ reply });
+
+    } catch (error) {
+        console.error('DeepSeek API error:', error);
+        res.status(500).json({ error: 'Failed to get response from AI assistant.' });
+    }
+});
+// ▲▲▲ 新增结束 ▲▲▲
 
 
 // --- Socket.IO 连接逻辑 ---
