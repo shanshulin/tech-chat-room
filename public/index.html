@@ -16,7 +16,7 @@
         </div>
         
         <div id="ai-app-icon" class="desktop-icon">
-            <img src="ai.ico" alt="AI Icon">
+            <img src="/ai.ico" alt="AI Icon">
             <span>DeepSeek AI.exe</span>
         </div>
 
@@ -29,7 +29,21 @@
              <div class="title-bar"><span class="title-bar-text">创建用户</span><div class="title-bar-controls"><button class="button-control" id="nickname-close-btn">X</button></div></div>
              <div class="window-body"><h1>设置您的身份</h1><p>请输入一个昵称:</p><input type="text" id="nickname-input"><button id="nickname-btn">进入聊天</button></div>
         </div>
-
+        
+        <!-- 用户列表窗口 (新) -->
+        <div id="users-list-window" class="window screen">
+            <div class="title-bar">
+                <span class="title-bar-text">在线用户</span>
+                <div class="title-bar-controls">
+                     <button class="button-control" disabled>X</button>
+                </div>
+            </div>
+            <div id="users-list-container" class="window-body">
+                <ul id="users-list"></ul>
+            </div>
+        </div>
+        
+        <!-- 聊天窗口 (已修改) -->
         <div id="chat-screen" class="chat-window window screen">
             <div class="title-bar">
                 <span class="title-bar-text">糯米团 v1.0 - 在线聊天室</span>
@@ -40,7 +54,6 @@
                 </div>
             </div>
             <div class="chat-container window-body">
-                <div id="users-list-container"><p>在线用户:</p><ul id="users-list"></ul></div>
                 <div class="chat-main">
                     <div id="messages" class="messages"></div>
                     <div class="toolbar"><div id="emoji-panel" class="emoji-panel hidden"></div><button id="emoji-btn" class="toolbar-btn">(^o^)/</button><button id="image-btn" class="toolbar-btn">🖼️</button><input type="file" id="image-upload-input" accept="image/*" style="display: none;"><button id="search-btn" class="toolbar-btn">🔍</button></div>

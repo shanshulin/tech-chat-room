@@ -248,8 +248,26 @@ button:active {
 }
 
 /* --- 聊天窗口 --- */
+
+/* 新增：为用户列表窗口设置特定位置和大小 */
+#users-list-window {
+    width: 180px;
+    height: 450px;
+    top: 15%;
+    left: 10%;
+    transform: none;
+    z-index: 11;
+}
+
+/* 修改：调整聊天窗口的位置和大小 */
 .chat-window {
-    max-width: 700px;
+    width: 700px;
+    height: 450px;
+    top: 15%;
+    /* 定位在用户列表右边，180px宽度 + 10px间距 */
+    left: calc(10% + 190px);
+    transform: none;
+    max-width: none; /* 覆盖通用的max-width */
 }
 
 .chat-container {
@@ -259,16 +277,27 @@ button:active {
     overflow: hidden;
 }
 
+/* 修改：清理旧的用户列表容器样式 */
 #users-list-container {
-    width: 150px;
+    width: auto;
     padding: 10px;
-    border-right: 2px solid #808080;
-    margin-right: 10px;
-    flex-shrink: 0;
+    border-right: none;
+    margin-right: 0;
+    flex-shrink: 1;
+    text-align: left;
 }
 
-#users-list-container p { margin: 0 0 10px; font-weight: bold; text-align: left;}
-#users-list { list-style: none; padding: 0; margin: 0; max-height: 300px; overflow-y: auto; text-align: left;}
+/* 隐藏不再需要的 <p> 标签 */
+#users-list-container p { display: none; }
+
+#users-list { 
+    list-style: none; 
+    padding: 0; 
+    margin: 0; 
+    height: 100%;
+    overflow-y: auto; 
+    text-align: left;
+}
 #users-list li { padding: 2px 5px; margin-bottom: 5px; display: flex; align-items: center; }
 #users-list li::before { content: ''; display: inline-block; width: 16px; height: 16px; background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAKtJREFUOI1jZGBgEGHAD97/UP///wMYgABiJmJgZWBgrsDBxMTECPz//w+G/Pz8D6Y2NDSMpDU1NUOcAAmg9vj4CcPS0tJ/kNqSkhLgLDAw8D+amZkR5AAyINpiY2OF2YABiJkGgvz//w8GqJ2dnaGkYGalY2BgYWBgaGFh4X+GjIyMDKY9Pz8/yAFU4OJi438gSgEqYWBgYGRgYODj42NwsbCwsDDjPzAwUGMAAEV8Rv25pKyKAAAAAElFTkSuQmCC'); margin-right: 5px; }
 

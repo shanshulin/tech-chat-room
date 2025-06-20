@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
         'nickname': { window: document.getElementById('nickname-screen'), closeBtn: document.getElementById('nickname-close-btn') },
         'search': { window: document.getElementById('search-window'), closeBtn: document.getElementById('search-close-btn') }
     };
+    
+    // 新增：获取用户列表窗口
+    const usersListWindow = document.getElementById('users-list-window');
 
     const loginBtn = document.getElementById('login-btn');
     const passwordInput = document.getElementById('password-input');
@@ -56,11 +59,89 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let aiConversationHistory = [{ role: 'system', content: systemPrompt }];
 
-    // --- 窗口管理器 ---
-    const windowManager = { open(appId) { const app = apps[appId]; if (!app || !app.window) return; app.window.classList.add('active'); this.focus(appId); if (app.icon) this.createTaskbarTab(appId); }, close(appId) { const app = apps[appId]; if (!app || !app.window) return; app.window.classList.remove('active', 'maximized'); const taskbarTab = document.getElementById(`${appId}-taskbar-tab`); if (taskbarTab) taskbarTab.remove(); }, minimize(appId) { const app = apps[appId]; if (!app || !app.window) return; app.window.classList.remove('active'); const taskbarTab = document.getElementById(`${appId}-taskbar-tab`); if (taskbarTab) { taskbarTab.classList.remove('active'); taskbarTab.classList.add('inactive'); } }, toggle(appId) { const app = apps[appId]; if (!app || !app.window) return; if (app.window.classList.contains('active')) { this.minimize(appId); } else { app.window.classList.add('active'); this.focus(appId); } }, focus(appId) { const app = apps[appId]; if (!app || !app.window) return; app.window.style.zIndex = ++zIndexCounter; document.querySelectorAll('.taskbar-tab').forEach(t => t.classList.remove('active', 'inactive')); document.querySelectorAll('.taskbar-tab').forEach(t => { if(t.id !== `${appId}-taskbar-tab`) t.classList.add('inactive'); }); const taskbarTab = document.getElementById(`${appId}-taskbar-tab`); if (taskbarTab) taskbarTab.classList.add('active'); }, createTaskbarTab(appId) { const app = apps[appId]; if (document.getElementById(`${appId}-taskbar-tab`)) return; const taskbarTab = document.createElement('div'); taskbarTab.id = `${appId}-taskbar-tab`; taskbarTab.className = 'taskbar-tab active'; taskbarTab.textContent = app.title; taskbarApps.appendChild(taskbarTab); taskbarTab.addEventListener('click', () => this.toggle(appId)); } };
+    // --- 窗口管理器 (已修改) ---
+    const windowManager = {
+        open(appId) {
+            const app = apps[appId];
+            if (!app || !app.window) return;
+            app.window.classList.add('active');
+            this.focus(appId);
+            if (app.icon) this.createTaskbarTab(appId);
+            // 新增：如果打开的是聊天窗口，也同时显示用户列表窗口
+            if (appId === 'chat') {
+                usersListWindow.classList.add('active');
+                makeDraggable(usersListWindow); // 让用户列表也能拖动
+            }
+        },
+        close(appId) {
+            const app = apps[appId];
+            if (!app || !app.window) return;
+            app.window.classList.remove('active', 'maximized');
+            const taskbarTab = document.getElementById(`${appId}-taskbar-tab`);
+            if (taskbarTab) taskbarTab.remove();
+            // 新增：如果关闭的是聊天窗口，也同时隐藏用户列表窗口
+            if (appId === 'chat') {
+                usersListWindow.classList.remove('active');
+            }
+        },
+        minimize(appId) {
+            const app = apps[appId];
+            if (!app || !app.window) return;
+            app.window.classList.remove('active');
+            const taskbarTab = document.getElementById(`${appId}-taskbar-tab`);
+            if (taskbarTab) {
+                taskbarTab.classList.remove('active');
+                taskbarTab.classList.add('inactive');
+            }
+            // 新增：如果最小化的是聊天窗口，也同时隐藏用户列表窗口
+            if (appId === 'chat') {
+                usersListWindow.classList.remove('active');
+            }
+        },
+        toggle(appId) {
+            const app = apps[appId];
+            if (!app || !app.window) return;
+            if (app.window.classList.contains('active')) {
+                this.minimize(appId);
+            } else {
+                app.window.classList.add('active');
+                this.focus(appId);
+                // 新增：如果切换显示聊天窗口，也同时显示用户列表窗口
+                if (appId === 'chat') {
+                    usersListWindow.classList.add('active');
+                }
+            }
+        },
+        focus(appId) {
+            const app = apps[appId];
+            if (!app || !app.window) return;
+            // 当聚焦聊天窗口时，也把用户列表窗口带到前面
+            if (appId === 'chat') {
+                usersListWindow.style.zIndex = ++zIndexCounter;
+            }
+            app.window.style.zIndex = ++zIndexCounter;
+            
+            document.querySelectorAll('.taskbar-tab').forEach(t => t.classList.remove('active', 'inactive'));
+            document.querySelectorAll('.taskbar-tab').forEach(t => {
+                if(t.id !== `${appId}-taskbar-tab`) t.classList.add('inactive');
+            });
+            const taskbarTab = document.getElementById(`${appId}-taskbar-tab`);
+            if (taskbarTab) taskbarTab.classList.add('active');
+        },
+        createTaskbarTab(appId) {
+            const app = apps[appId];
+            if (document.getElementById(`${appId}-taskbar-tab`)) return;
+            const taskbarTab = document.createElement('div');
+            taskbarTab.id = `${appId}-taskbar-tab`;
+            taskbarTab.className = 'taskbar-tab active';
+            taskbarTab.textContent = app.title;
+            taskbarApps.appendChild(taskbarTab);
+            taskbarTab.addEventListener('click', () => this.toggle(appId));
+        }
+    };
     
     // --- 核心功能函数 ---
-    function makeDraggable(windowElement) { const titleBar = windowElement.querySelector('.title-bar'); if (!titleBar) return; let isDragging = false, offsetX, offsetY; titleBar.addEventListener('mousedown', (e) => { if (windowElement.classList.contains('maximized') || e.target.closest('.button-control')) return; isDragging = true; const appId = Object.keys(apps).find(key => apps[key].window === windowElement); if (appId) windowManager.focus(appId); const rect = windowElement.getBoundingClientRect(); windowElement.style.top = `${rect.top}px`; windowElement.style.left = `${rect.left}px`; windowElement.style.transform = 'none'; offsetX = e.clientX - rect.left; offsetY = e.clientY - rect.top; document.body.classList.add('dragging-active'); e.preventDefault(); }); document.addEventListener('mousemove', (e) => { if (!isDragging) return; windowElement.style.left = `${e.clientX - offsetX}px`; windowElement.style.top = `${e.clientY - offsetY}px`; }); document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; document.body.classList.remove('dragging-active'); } }); }
+    function makeDraggable(windowElement) { const titleBar = windowElement.querySelector('.title-bar'); if (!titleBar) return; let isDragging = false, offsetX, offsetY; titleBar.addEventListener('mousedown', (e) => { if (windowElement.classList.contains('maximized') || e.target.closest('.button-control')) return; isDragging = true; const appId = Object.keys(apps).find(key => apps[key].window === windowElement); if (appId) { windowManager.focus(appId); } else if (windowElement.id === 'users-list-window') { windowManager.focus('chat'); } const rect = windowElement.getBoundingClientRect(); windowElement.style.top = `${rect.top}px`; windowElement.style.left = `${rect.left}px`; windowElement.style.transform = 'none'; offsetX = e.clientX - rect.left; offsetY = e.clientY - rect.top; document.body.classList.add('dragging-active'); e.preventDefault(); }); document.addEventListener('mousemove', (e) => { if (!isDragging) return; windowElement.style.left = `${e.clientX - offsetX}px`; windowElement.style.top = `${e.clientY - offsetY}px`; }); document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; document.body.classList.remove('dragging-active'); } }); }
     function sendMessage() { if (input.value && !input.disabled) { socket.emit('chat message', { type: 'text', msg: input.value }); input.value = ''; input.focus(); } }
     function addSystemMessage(msg) { const item = document.createElement('div'); item.classList.add('system-message'); item.textContent = `*** ${msg} ***`; messages.appendChild(item); messages.scrollTop = messages.scrollHeight; }
     function createChatMessageElement(data) { const item = document.createElement('div'); item.className = 'message-item'; const timestampSpan = document.createElement('span'); timestampSpan.className = 'timestamp'; const date = new Date(data.created_at || Date.now()); timestampSpan.textContent = `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2,'0')}/${String(date.getDate()).padStart(2,'0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`; const nicknameSpan = document.createElement('span'); nicknameSpan.className = 'nickname'; nicknameSpan.textContent = `<${data.nickname}>: `; const contentSpan = document.createElement('span'); const messageContent = data.msg || ''; if (data.message_type === 'image') { const img = document.createElement('img'); img.src = messageContent; img.className = 'chat-image'; contentSpan.appendChild(img); } else { let finalMessage = messageContent; for (const code in KAOMOJI_MAP) { const regex = new RegExp(code.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'); finalMessage = finalMessage.replace(regex, KAOMOJI_MAP[code]); } contentSpan.textContent = finalMessage; } item.appendChild(timestampSpan); item.appendChild(nicknameSpan); item.appendChild(contentSpan); return item; }
