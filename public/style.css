@@ -403,54 +403,59 @@ body.dragging-active { cursor: move; user-select: none; }
 .ai-toolbar input[type="checkbox"] { margin-right: 5px; }
 .ai-toolbar select { margin-left: 10px; background: #c0c0c0; border: 1px solid; border-top-color: #808080; border-left-color: #808080; border-right-color: #fff; border-bottom-color: #fff; font-family: 'VT323', monospace; font-size: 14px; padding: 2px; }
 
-
-/* --- ★★★ 搜索窗口的布局和结果样式 (最终正确版) ★★★ --- */
-/*
-  这个部分严格遵循你的指示，只修复搜索结果窗口的“背景透明”和“排版混乱”问题。
-*/
+/* --- ★★★ 搜索窗口的布局和结果样式 (最终优化版) ★★★ --- */
 .search-window-body {
     padding: 10px !important;
     text-align: left;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
+
 .search-controls {
     display: flex;
     flex-direction: column;
-    gap: 8px; /* 增加控件之间的间距 */
+    gap: 8px;
     border-bottom: 2px solid #808080;
     padding-bottom: 10px;
     margin-bottom: 10px;
+    flex-shrink: 0; /* 确保搜索控件区域不被压缩 */
 }
+
 .control-group {
     display: flex;
     align-items: center;
 }
+
 .control-group label {
-    width: 70px; /* 固定标签宽度以对齐 */
+    width: 70px;
     flex-shrink: 0;
 }
+
 .control-group input[type="text"], .control-group select {
     flex-grow: 1;
 }
 
 .search-results-container {
-    flex-grow: 1;
-    background: #ffffff; /* 解决背景透明问题 */
+    flex-grow: 1; /* 占据所有剩余空间 */
+    background: #ffffff;
     padding: 10px;
-    overflow-y: auto;
-    /* 加上经典的凹陷边框 */
+    overflow-y: auto; /* 内容超出时，自动出现滚动条 */
     border: 2px solid;
     border-top-color: #000;
     border-left-color: #000;
     border-right-color: #fff;
     border-bottom-color: #fff;
+    min-height: 100px; /* 保证没结果时也有一定高度 */
 }
-/* 我们复用了 .message-item, 所以不需要为它写太多新样式 */
-/* 但可以加一个分隔线，让结果更清晰 */
+
+/* 复用 message-item 样式，并添加分隔线 */
 .search-results-container .message-item {
-    border-bottom: 1px dotted #808080;
+    border-bottom: 1px dotted #a0a0a0;
     padding-bottom: 4px;
     margin-bottom: 4px;
 }
+
 .search-results-container .message-item:last-child {
     border-bottom: none;
 }
