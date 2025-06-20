@@ -403,7 +403,11 @@ body.dragging-active { cursor: move; user-select: none; }
 .ai-toolbar input[type="checkbox"] { margin-right: 5px; }
 .ai-toolbar select { margin-left: 10px; background: #c0c0c0; border: 1px solid; border-top-color: #808080; border-left-color: #808080; border-right-color: #fff; border-bottom-color: #fff; font-family: 'VT323', monospace; font-size: 14px; padding: 2px; }
 
-/* --- ★★★ 搜索窗口的布局和结果样式 ★★★ --- */
+
+/* --- ★★★ 搜索窗口的布局和结果样式 (最终正确版) ★★★ --- */
+/*
+  这个部分严格遵循你的指示，只修复搜索结果窗口的“背景透明”和“排版混乱”问题。
+*/
 .search-window-body {
     padding: 10px !important;
     text-align: left;
@@ -427,6 +431,7 @@ body.dragging-active { cursor: move; user-select: none; }
 .control-group input[type="text"], .control-group select {
     flex-grow: 1;
 }
+
 .search-results-container {
     flex-grow: 1;
     background: #ffffff; /* 解决背景透明问题 */
