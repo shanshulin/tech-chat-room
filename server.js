@@ -1,4 +1,4 @@
-// server.js (ULTIMATE FINAL CORRECTION USING '@tavily/core')
+// server.js (SIMPLIFIED BACK TO GOOGLE-ONLY SEARCH)
 
 require('dotenv').config();
 
@@ -13,18 +13,12 @@ const OpenAI = require('openai');
 const axios = require('axios');
 const streamifier = require('streamifier');
 
-// ▼▼▼ ULTIMATE FINAL CORRECTION: Require the correct package '@tavily/core' and destructure TavilyClient ▼▼▼
-const { TavilyClient } = require('@tavily/core');
-// ▲▲▲ END ULTIMATE FINAL CORRECTION ▲▲▲
-
-
 // --- 全局配置 ---
 const requiredEnvVars = [
     'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET',
     'DATABASE_URL',
     'DEEPSEEK_API_KEY',
     'GOOGLE_SEARCH_API_KEY', 'GOOGLE_SEARCH_CX',
-    'TAVILY_API_KEY'
 ];
 
 for (const varName of requiredEnvVars) {
@@ -43,11 +37,6 @@ const io = new Server(server);
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 const deepseek = new OpenAI({ apiKey: process.env.DEEPSEEK_API_KEY, baseURL: 'https://api.deepseek.com/v1', timeout: 20000 });
-
-// ▼▼▼ ULTIMATE FINAL CORRECTION: Initialize with the correct class and pass the key as an object ▼▼▼
-const tavily = new TavilyClient({ apiKey: process.env.TAVILY_API_KEY });
-// ▲▲▲ END ULTIMATE FINAL CORRECTION ▲▲▲
-
 
 async function initializeDatabase() { try { const client = await pool.connect(); await client.query(`CREATE TABLE IF NOT EXISTS messages (id SERIAL PRIMARY KEY, nickname VARCHAR(100) NOT NULL, content TEXT NOT NULL, message_type VARCHAR(10) DEFAULT 'text', created_at TIMESTAMPTZ DEFAULT NOW());`); client.release(); console.log('Database table "messages" is ready.'); } catch (dbErr) { console.error('FATAL ERROR: Could not initialize database!', dbErr); process.exit(1); } }
 app.use(express.static(path.join(__dirname, 'public')));
@@ -80,38 +69,9 @@ const tools = [
     }
 ];
 
-async function searchWithGoogle({ query }) {
-    const cleanedQuery = query.replace(/\s*\d{4}年(\d{1,2}月)?\s*|\s*\d{4}-\d{1,2}\s*/g, ' ').trim();
-    console.log(`Executing Google web_search with query: "${cleanedQuery}"`);
-    const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
-    const cx = process.env.GOOGLE_SEARCH_CX;
-    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(cleanedQuery)}`;
-    try {
-        const response = await axios.get(url, { timeout: 20000 });
-        if (!response.data.items || response.data.items.length === 0) { return JSON.stringify({ "info": "No search results found." }); }
-        const results = response.data.items.map(item => ({ title: item.title, snippet: item.snippet, link: item.link }));
-        return JSON.stringify(results.slice(0, 5));
-    } catch (error) {
-        console.error("Google Search API error:", error.message);
-        return JSON.stringify({ error: `Google Search API failed. Reason: ${error.message}` });
-    }
-}
-
-async function searchWithTavily({ query }) {
-    console.log(`Executing Tavily web_search with query: "${query}"`);
-    try {
-        const response = await tavily.search(query, { search_depth: "advanced" });
-        return JSON.stringify(response);
-    } catch (error) {
-        console.error("Tavily API error:", error.message);
-        return JSON.stringify({ error: `Tavily API failed. Reason: ${error.message}` });
-    }
-}
-
-
-// AI 聊天 API 路由
+// --- AI 聊天 API 路由 ---
 app.post('/api/ai-chat', async (req, res) => {
-    const { history, use_network, search_provider = 'google' } = req.body;
+    const { history, use_network } = req.body;
 
     if (!history || !history.length) {
         return res.status(400).json({ error: 'Conversation history is required.' });
@@ -143,15 +103,22 @@ app.post('/api/ai-chat', async (req, res) => {
                 console.log(`AI decided to use the tool: ${functionName}`);
 
                 if (functionName === 'web_search') {
-                    console.log(`Routing search to provider: ${search_provider}`);
-                    switch (search_provider) {
-                        case 'tavily':
-                            toolResultContent = await searchWithTavily(functionArgs);
-                            break;
-                        case 'google':
-                        default:
-                            toolResultContent = await searchWithGoogle(functionArgs);
-                            break;
+                    console.log(`Routing search to Google.`);
+                    const cleanedQuery = functionArgs.query.replace(/\s*\d{4}年(\d{1,2}月)?\s*|\s*\d{4}-\d{1,2}\s*/g, ' ').trim();
+                    const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
+                    const cx = process.env.GOOGLE_SEARCH_CX;
+                    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(cleanedQuery)}`;
+                    try {
+                        const searchResponse = await axios.get(url, { timeout: 20000 });
+                        if (!searchResponse.data.items || searchResponse.data.items.length === 0) {
+                            toolResultContent = JSON.stringify({ "info": "No search results found." });
+                        } else {
+                            const results = searchResponse.data.items.map(item => ({ title: item.title, snippet: item.snippet, link: item.link }));
+                            toolResultContent = JSON.stringify(results.slice(0, 5));
+                        }
+                    } catch (error) {
+                        console.error("Google Search API error:", error.message);
+                        toolResultContent = JSON.stringify({ error: `Google Search API failed. Reason: ${error.message}` });
                     }
                 } else if (functionName === 'get_current_time') {
                     toolResultContent = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });

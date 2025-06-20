@@ -1,10 +1,6 @@
-// client.js (最终思维校正版)
-
 document.addEventListener('DOMContentLoaded', () => {
-    // 强制隐藏所有窗口，防止启动时全部显示
     document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
 
-    // --- DOM 元素统一获取 ---
     const desktop = document.getElementById('desktop');
     const taskbarApps = document.getElementById('taskbar-apps');
     const clockElement = document.getElementById('clock');
@@ -17,9 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'search': { window: document.getElementById('search-window'), closeBtn: document.getElementById('search-close-btn') }
     };
     
-    // 新增：获取用户列表窗口
     const usersListWindow = document.getElementById('users-list-window');
-
     const loginBtn = document.getElementById('login-btn');
     const passwordInput = document.getElementById('password-input');
     const errorMsg = document.getElementById('error-msg');
@@ -39,22 +33,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalCloseBtn = document.querySelector('.close-btn');
     const searchBtn = document.getElementById('search-btn');
     
-    // AI 机器人相关元素
     const aiMessages = document.getElementById('ai-messages');
     const aiInput = document.getElementById('ai-input');
     const aiSendBtn = document.getElementById('ai-send-btn');
     const aiNetworkToggle = document.getElementById('ai-network-toggle');
-    // ▼▼▼ NEW: 获取下拉菜单元素 ▼▼▼
-    const searchProviderSelect = document.getElementById('search-provider-select');
-    // ▲▲▲ END NEW ▲▲▲
     
-    // --- 状态变量 ---
     const socket = io({ reconnection: true, reconnectionDelay: 1000, reconnectionDelayMax: 5000, reconnectionAttempts: Infinity });
     let myNickname = sessionStorage.getItem('nickname') || '';
     let zIndexCounter = 10;
     const KAOMOJI_MAP = { ':happy:': '(^▽^)', ':lol:': 'o(>▽<)o', ':love:': '(｡♥‿♥｡)', ':excited:': '(*^▽^*)', ':proud:': '(´_ゝ`)', ':sad:': '(T_T)', ':cry:': '(；′⌒`)', ':sob:': '༼ಢ_ಢ༽', ':wow:': 'Σ(°ロ°)', ':speechless:': '(－_－) zzZ', ':confused:': '(°_°)?', ':wave:': '(^_^)/', ':ok:': 'd(^_^o)', ':sorry:': 'm(_ _)m', ':run:': 'ε=ε=┌( >_<)┘', ':tableflip:': '(╯°□°）╯︵ ┻━┻', ':cat:': '(=^ェ^=)', ':bear:': 'ʕ •ᴥ•ʔ', ':note:': 'ヾ( ´ A ` )ﾉ', ':sleepy:': '(´-ω-`)' };
     
-    // AI 机器人状态变量
     const systemPrompt = `You are a helpful assistant powered by the DeepSeek model. You must identify yourself as a DeepSeek assistant.
     When you need to search for the "latest" or "current" information, use the web_search tool.
     IMPORTANT: When using the web_search tool for the latest information, construct a simple query like "latest entertainment news" or "current weather in Beijing". DO NOT add any specific dates like '2023' or 'September' to the query unless the user explicitly provides them.
@@ -62,7 +50,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let aiConversationHistory = [{ role: 'system', content: systemPrompt }];
 
-    // --- 窗口管理器 (已修改) ---
     const windowManager = {
         open(appId) {
             const app = apps[appId];
@@ -70,10 +57,9 @@ document.addEventListener('DOMContentLoaded', () => {
             app.window.classList.add('active');
             this.focus(appId);
             if (app.icon) this.createTaskbarTab(appId);
-            // 新增：如果打开的是聊天窗口，也同时显示用户列表窗口
             if (appId === 'chat') {
                 usersListWindow.classList.add('active');
-                makeDraggable(usersListWindow); // 让用户列表也能拖动
+                makeDraggable(usersListWindow);
             }
         },
         close(appId) {
@@ -82,7 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
             app.window.classList.remove('active', 'maximized');
             const taskbarTab = document.getElementById(`${appId}-taskbar-tab`);
             if (taskbarTab) taskbarTab.remove();
-            // 新增：如果关闭的是聊天窗口，也同时隐藏用户列表窗口
             if (appId === 'chat') {
                 usersListWindow.classList.remove('active');
             }
@@ -96,7 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 taskbarTab.classList.remove('active');
                 taskbarTab.classList.add('inactive');
             }
-            // 新增：如果最小化的是聊天窗口，也同时隐藏用户列表窗口
             if (appId === 'chat') {
                 usersListWindow.classList.remove('active');
             }
@@ -109,7 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 app.window.classList.add('active');
                 this.focus(appId);
-                // 新增：如果切换显示聊天窗口，也同时显示用户列表窗口
                 if (appId === 'chat') {
                     usersListWindow.classList.add('active');
                 }
@@ -118,7 +101,6 @@ document.addEventListener('DOMContentLoaded', () => {
         focus(appId) {
             const app = apps[appId];
             if (!app || !app.window) return;
-            // 当聚焦聊天窗口时，也把用户列表窗口带到前面
             if (appId === 'chat') {
                 usersListWindow.style.zIndex = ++zIndexCounter;
             }
@@ -143,7 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // --- 核心功能函数 ---
     function makeDraggable(windowElement) { const titleBar = windowElement.querySelector('.title-bar'); if (!titleBar) return; let isDragging = false, offsetX, offsetY; titleBar.addEventListener('mousedown', (e) => { if (windowElement.classList.contains('maximized') || e.target.closest('.button-control')) return; isDragging = true; const appId = Object.keys(apps).find(key => apps[key].window === windowElement); if (appId) { windowManager.focus(appId); } else if (windowElement.id === 'users-list-window') { windowManager.focus('chat'); } const rect = windowElement.getBoundingClientRect(); windowElement.style.top = `${rect.top}px`; windowElement.style.left = `${rect.left}px`; windowElement.style.transform = 'none'; offsetX = e.clientX - rect.left; offsetY = e.clientY - rect.top; document.body.classList.add('dragging-active'); e.preventDefault(); }); document.addEventListener('mousemove', (e) => { if (!isDragging) return; windowElement.style.left = `${e.clientX - offsetX}px`; windowElement.style.top = `${e.clientY - offsetY}px`; }); document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; document.body.classList.remove('dragging-active'); } }); }
     function sendMessage() { if (input.value && !input.disabled) { socket.emit('chat message', { type: 'text', msg: input.value }); input.value = ''; input.focus(); } }
     function addSystemMessage(msg) { const item = document.createElement('div'); item.classList.add('system-message'); item.textContent = `*** ${msg} ***`; messages.appendChild(item); messages.scrollTop = messages.scrollHeight; }
@@ -153,7 +134,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateClock() { const now = new Date(); const hours = String(now.getHours()).padStart(2, '0'); const minutes = String(now.getMinutes()).padStart(2, '0'); clockElement.textContent = `${hours}:${minutes}`; }
     function addAiChatMessage(role, text) { const item = document.createElement('div'); if (role === 'user') { item.className = 'user-message'; item.textContent = `You: ${text}`; } else if (role === 'assistant') { item.className = 'ai-message'; item.innerHTML = `<b>AI:</b> ${marked.parse(text)}`; } else if (role === 'thinking') { item.className = 'thinking-indicator'; item.id = 'thinking-indicator'; item.textContent = 'AI is thinking...'; } else if (role === 'error') { item.className = 'system-message'; item.textContent = `*** Error: ${text} ***`; } aiMessages.appendChild(item); aiMessages.scrollTop = aiMessages.scrollHeight; return item; }
     
-    // ▼▼▼ MODIFIED: sendAiMessage 函数已修改 ▼▼▼
     async function sendAiMessage() {
         const messageText = aiInput.value.trim();
         if (!messageText) return;
@@ -166,7 +146,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const thinkingIndicator = addAiChatMessage('thinking');
 
         const useNetwork = aiNetworkToggle.checked;
-        const searchProvider = searchProviderSelect.value; // 获取下拉菜单的值
 
         try {
             const response = await fetch('/api/ai-chat', {
@@ -175,7 +154,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({
                     history: aiConversationHistory,
                     use_network: useNetwork,
-                    search_provider: searchProvider // 将选项发送给后端
                 })
             });
 
@@ -197,9 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
             aiInput.focus();
         }
     }
-    // ▲▲▲ END MODIFIED ▲▲▲
 
-    // --- 事件绑定 ---
     Object.keys(apps).forEach(appId => { if (apps[appId].window) { makeDraggable(apps[appId].window); apps[appId].window.addEventListener('mousedown', () => windowManager.focus(appId), true); } if (apps[appId].icon) { apps[appId].icon.addEventListener('dblclick', () => { const taskbarTab = document.getElementById(`${appId}-taskbar-tab`); if(taskbarTab){ windowManager.toggle(appId); } else if (appId === 'chat') { if (myNickname) windowManager.open('chat'); else windowManager.open('login'); } else { windowManager.open(appId); } }); } if (apps[appId].closeBtn) apps[appId].closeBtn.addEventListener('click', (e) => { e.stopPropagation(); windowManager.close(appId); }); if (apps[appId].minimizeBtn) apps[appId].minimizeBtn.addEventListener('click', (e) => { e.stopPropagation(); windowManager.minimize(appId); }); if (apps[appId].maximizeBtn) apps[appId].maximizeBtn.addEventListener('click', (e) => { e.stopPropagation(); apps[appId].window.classList.toggle('maximized'); }); });
     loginBtn.addEventListener('click', () => { if (passwordInput.value === 'MWNMT') { windowManager.close('login'); windowManager.open('nickname'); } else { errorMsg.textContent = '错误: 密码不正确。'; setTimeout(() => { errorMsg.textContent = ''; }, 3000); } });
     nicknameBtn.addEventListener('click', () => { const nickname = nicknameInput.value.trim(); if (nickname) { myNickname = nickname; sessionStorage.setItem('nickname', nickname); socket.emit('join', nickname); windowManager.close('nickname'); windowManager.open('chat'); } });

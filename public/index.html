@@ -30,7 +30,6 @@
              <div class="window-body"><h1>设置您的身份</h1><p>请输入一个昵称:</p><input type="text" id="nickname-input"><button id="nickname-btn">进入聊天</button></div>
         </div>
         
-        <!-- 用户列表窗口 (新) -->
         <div id="users-list-window" class="window screen">
             <div class="title-bar">
                 <span class="title-bar-text">在线用户</span>
@@ -43,7 +42,6 @@
             </div>
         </div>
         
-        <!-- 聊天窗口 (已修改) -->
         <div id="chat-screen" class="chat-window window screen">
             <div class="title-bar">
                 <span class="title-bar-text">糯米团 v1.0 - 在线聊天室</span>
@@ -99,17 +97,8 @@
                         <div class="ai-toolbar">
                             <label for="ai-network-toggle">
                                 <input type="checkbox" id="ai-network-toggle" checked>
-                                联网搜索
+                                联网搜索 (使用Google)
                             </label>
-
-                            <!-- ▼▼▼ NEW: 新增搜索提供商下拉菜单 ▼▼▼ -->
-                            <select id="search-provider-select">
-                                <option value="google" selected>引擎: Google</option>
-                                <option value="tavily">引擎: Tavily</option>
-                                <option value="serper">引擎: Serper</option>
-                            </select>
-                            <!-- ▲▲▲ END NEW ▲▲▲ -->
-                            
                         </div>
                     </div>
                 </div>
