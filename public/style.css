@@ -432,3 +432,18 @@ body.dragging-active { cursor: move; user-select: none; }
 .ai-toolbar input[type="checkbox"] {
     margin-right: 5px;
 }
+
+/* ▼▼▼ NEW: 为新的下拉菜单添加样式 ▼▼▼ */
+.ai-toolbar select {
+    margin-left: 10px;
+    background: #c0c0c0;
+    border: 1px solid;
+    border-top-color: #808080;
+    border-left-color: #808080;
+    border-right-color: #fff;
+    border-bottom-color: #fff;
+    font-family: 'VT323', monospace;
+    font-size: 14px;
+    padding: 2px;
+}
+/* ▲▲▲ END NEW ▲▲▲ */

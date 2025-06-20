@@ -44,6 +44,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const aiInput = document.getElementById('ai-input');
     const aiSendBtn = document.getElementById('ai-send-btn');
     const aiNetworkToggle = document.getElementById('ai-network-toggle');
+    // ▼▼▼ NEW: 获取下拉菜单元素 ▼▼▼
+    const searchProviderSelect = document.getElementById('search-provider-select');
+    // ▲▲▲ END NEW ▲▲▲
     
     // --- 状态变量 ---
     const socket = io({ reconnection: true, reconnectionDelay: 1000, reconnectionDelayMax: 5000, reconnectionAttempts: Infinity });
@@ -149,8 +152,53 @@ document.addEventListener('DOMContentLoaded', () => {
     async function uploadImage(file) { if (!file || !file.type.startsWith('image/')) return; addSystemMessage(`正在上传图片: ${file.name || 'clipboard_image.png'}...`); const formData = new FormData(); formData.append('image', file); try { const response = await fetch('/upload', { method: 'POST', body: formData }); if (!response.ok) throw new Error('上传失败'); const result = await response.json(); socket.emit('chat message', { type: 'image', msg: result.imageUrl }); } catch (error) { console.error('上传出错:', error); addSystemMessage(`图片上传失败。`); } }
     function updateClock() { const now = new Date(); const hours = String(now.getHours()).padStart(2, '0'); const minutes = String(now.getMinutes()).padStart(2, '0'); clockElement.textContent = `${hours}:${minutes}`; }
     function addAiChatMessage(role, text) { const item = document.createElement('div'); if (role === 'user') { item.className = 'user-message'; item.textContent = `You: ${text}`; } else if (role === 'assistant') { item.className = 'ai-message'; item.innerHTML = `<b>AI:</b> ${marked.parse(text)}`; } else if (role === 'thinking') { item.className = 'thinking-indicator'; item.id = 'thinking-indicator'; item.textContent = 'AI is thinking...'; } else if (role === 'error') { item.className = 'system-message'; item.textContent = `*** Error: ${text} ***`; } aiMessages.appendChild(item); aiMessages.scrollTop = aiMessages.scrollHeight; return item; }
-    async function sendAiMessage() { const messageText = aiInput.value.trim(); if (!messageText) return; addAiChatMessage('user', messageText); aiConversationHistory.push({ role: 'user', content: messageText }); aiInput.value = ''; aiInput.disabled = true; aiSendBtn.disabled = true; const thinkingIndicator = addAiChatMessage('thinking'); const useNetwork = aiNetworkToggle.checked; try { const response = await fetch('/api/ai-chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ history: aiConversationHistory, use_network: useNetwork }) }); if (!response.ok) { const errData = await response.json(); throw new Error(errData.error || 'AI service returned an error.'); } const data = await response.json(); addAiChatMessage('assistant', data.reply); aiConversationHistory.push({ role: 'assistant', content: data.reply }); } catch (error) { console.error('AI Chat Error:', error); addAiChatMessage('error', error.message); } finally { if (thinkingIndicator) thinkingIndicator.remove(); aiInput.disabled = false; aiSendBtn.disabled = false; aiInput.focus(); } }
     
+    // ▼▼▼ MODIFIED: sendAiMessage 函数已修改 ▼▼▼
+    async function sendAiMessage() {
+        const messageText = aiInput.value.trim();
+        if (!messageText) return;
+
+        addAiChatMessage('user', messageText);
+        aiConversationHistory.push({ role: 'user', content: messageText });
+        aiInput.value = '';
+        aiInput.disabled = true;
+        aiSendBtn.disabled = true;
+        const thinkingIndicator = addAiChatMessage('thinking');
+
+        const useNetwork = aiNetworkToggle.checked;
+        const searchProvider = searchProviderSelect.value; // 获取下拉菜单的值
+
+        try {
+            const response = await fetch('/api/ai-chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    history: aiConversationHistory,
+                    use_network: useNetwork,
+                    search_provider: searchProvider // 将选项发送给后端
+                })
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || 'AI service returned an error.');
+            }
+
+            const data = await response.json();
+            addAiChatMessage('assistant', data.reply);
+            aiConversationHistory.push({ role: 'assistant', content: data.reply });
+        } catch (error) {
+            console.error('AI Chat Error:', error);
+            addAiChatMessage('error', error.message);
+        } finally {
+            if (thinkingIndicator) thinkingIndicator.remove();
+            aiInput.disabled = false;
+            aiSendBtn.disabled = false;
+            aiInput.focus();
+        }
+    }
+    // ▲▲▲ END MODIFIED ▲▲▲
+
     // --- 事件绑定 ---
     Object.keys(apps).forEach(appId => { if (apps[appId].window) { makeDraggable(apps[appId].window); apps[appId].window.addEventListener('mousedown', () => windowManager.focus(appId), true); } if (apps[appId].icon) { apps[appId].icon.addEventListener('dblclick', () => { const taskbarTab = document.getElementById(`${appId}-taskbar-tab`); if(taskbarTab){ windowManager.toggle(appId); } else if (appId === 'chat') { if (myNickname) windowManager.open('chat'); else windowManager.open('login'); } else { windowManager.open(appId); } }); } if (apps[appId].closeBtn) apps[appId].closeBtn.addEventListener('click', (e) => { e.stopPropagation(); windowManager.close(appId); }); if (apps[appId].minimizeBtn) apps[appId].minimizeBtn.addEventListener('click', (e) => { e.stopPropagation(); windowManager.minimize(appId); }); if (apps[appId].maximizeBtn) apps[appId].maximizeBtn.addEventListener('click', (e) => { e.stopPropagation(); apps[appId].window.classList.toggle('maximized'); }); });
     loginBtn.addEventListener('click', () => { if (passwordInput.value === 'MWNMT') { windowManager.close('login'); windowManager.open('nickname'); } else { errorMsg.textContent = '错误: 密码不正确。'; setTimeout(() => { errorMsg.textContent = ''; }, 3000); } });

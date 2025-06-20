@@ -28,6 +28,7 @@
     "pg": "^8.16.1",
     "rss-parser": "^3.13.0",
     "socket.io": "^4.8.1",
-    "streamifier": "^0.1.1"
+    "streamifier": "^0.1.1",
+    "tavily": "^1.0.2"
   }
 }
