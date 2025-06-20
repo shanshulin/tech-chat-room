@@ -1,4 +1,4 @@
-// server.js (SIMPLIFIED BACK TO GOOGLE-ONLY SEARCH)
+// server.js (FINAL AND CORRECT IMPLEMENTATION)
 
 require('dotenv').config();
 
@@ -19,6 +19,7 @@ const requiredEnvVars = [
     'DATABASE_URL',
     'DEEPSEEK_API_KEY',
     'GOOGLE_SEARCH_API_KEY', 'GOOGLE_SEARCH_CX',
+    'TAVILY_API_KEY' // 确保 Tavily key 在 Render 环境变量中
 ];
 
 for (const varName of requiredEnvVars) {
@@ -28,7 +29,7 @@ for (const varName of requiredEnvVars) {
     }
 }
 
-// --- 初始化各种服务 ---
+// --- 初始化服务 ---
 cloudinary.config({ cloud_name: process.env.CLOUDINARY_CLOUD_NAME, api_key: process.env.CLOUDINARY_API_KEY, api_secret: process.env.CLOUDINARY_API_SECRET });
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 const app = express();
@@ -69,9 +70,41 @@ const tools = [
     }
 ];
 
+async function searchWithGoogle({ query }) {
+    const cleanedQuery = query.replace(/\s*\d{4}年(\d{1,2}月)?\s*|\s*\d{4}-\d{1,2}\s*/g, ' ').trim();
+    console.log(`Executing Google web_search with query: "${cleanedQuery}"`);
+    const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
+    const cx = process.env.GOOGLE_SEARCH_CX;
+    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(cleanedQuery)}`;
+    try {
+        const response = await axios.get(url, { timeout: 20000 });
+        if (!response.data.items || response.data.items.length === 0) { return JSON.stringify({ "info": "No search results found." }); }
+        const results = response.data.items.map(item => ({ title: item.title, snippet: item.snippet, link: item.link }));
+        return JSON.stringify(results.slice(0, 5));
+    } catch (error) {
+        console.error("Google Search API error:", error.message);
+        return JSON.stringify({ error: `Google Search API failed. Reason: ${error.message}` });
+    }
+}
+
+async function searchWithTavily({ query }) {
+    console.log(`Executing Tavily web_search with query: "${query}"`);
+    try {
+        // 动态导入 ESM 包 @tavily/core
+        const { TavilyClient } = await import('@tavily/core');
+        // 在函数内实例化
+        const tavily = new TavilyClient({ apiKey: process.env.TAVILY_API_KEY });
+        const response = await tavily.search(query, { search_depth: "advanced" });
+        return JSON.stringify(response);
+    } catch (error) {
+        console.error("Tavily API error:", error);
+        return JSON.stringify({ error: `Tavily API failed. Reason: ${error.message}` });
+    }
+}
+
 // --- AI 聊天 API 路由 ---
 app.post('/api/ai-chat', async (req, res) => {
-    const { history, use_network } = req.body;
+    const { history, use_network, search_provider = 'google' } = req.body;
 
     if (!history || !history.length) {
         return res.status(400).json({ error: 'Conversation history is required.' });
@@ -80,7 +113,6 @@ app.post('/api/ai-chat', async (req, res) => {
     try {
         const model_to_use = "deepseek-chat";
         console.log(`Using model: ${model_to_use}`);
-
         const payload = { model: model_to_use, messages: history };
 
         if (use_network) {
@@ -103,22 +135,15 @@ app.post('/api/ai-chat', async (req, res) => {
                 console.log(`AI decided to use the tool: ${functionName}`);
 
                 if (functionName === 'web_search') {
-                    console.log(`Routing search to Google.`);
-                    const cleanedQuery = functionArgs.query.replace(/\s*\d{4}年(\d{1,2}月)?\s*|\s*\d{4}-\d{1,2}\s*/g, ' ').trim();
-                    const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
-                    const cx = process.env.GOOGLE_SEARCH_CX;
-                    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(cleanedQuery)}`;
-                    try {
-                        const searchResponse = await axios.get(url, { timeout: 20000 });
-                        if (!searchResponse.data.items || searchResponse.data.items.length === 0) {
-                            toolResultContent = JSON.stringify({ "info": "No search results found." });
-                        } else {
-                            const results = searchResponse.data.items.map(item => ({ title: item.title, snippet: item.snippet, link: item.link }));
-                            toolResultContent = JSON.stringify(results.slice(0, 5));
-                        }
-                    } catch (error) {
-                        console.error("Google Search API error:", error.message);
-                        toolResultContent = JSON.stringify({ error: `Google Search API failed. Reason: ${error.message}` });
+                    console.log(`Routing search to provider: ${search_provider}`);
+                    switch (search_provider) {
+                        case 'tavily':
+                            toolResultContent = await searchWithTavily(functionArgs);
+                            break;
+                        case 'google':
+                        default:
+                            toolResultContent = await searchWithGoogle(functionArgs);
+                            break;
                     }
                 } else if (functionName === 'get_current_time') {
                     toolResultContent = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });

@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const aiInput = document.getElementById('ai-input');
     const aiSendBtn = document.getElementById('ai-send-btn');
     const aiNetworkToggle = document.getElementById('ai-network-toggle');
+    const searchProviderSelect = document.getElementById('search-provider-select');
     
     const socket = io({ reconnection: true, reconnectionDelay: 1000, reconnectionDelayMax: 5000, reconnectionAttempts: Infinity });
     let myNickname = sessionStorage.getItem('nickname') || '';
@@ -146,6 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const thinkingIndicator = addAiChatMessage('thinking');
 
         const useNetwork = aiNetworkToggle.checked;
+        const searchProvider = searchProviderSelect.value;
 
         try {
             const response = await fetch('/api/ai-chat', {
@@ -154,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({
                     history: aiConversationHistory,
                     use_network: useNetwork,
+                    search_provider: searchProvider
                 })
             });
 
