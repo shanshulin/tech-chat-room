@@ -14,11 +14,6 @@
             <img src="chat.ico" alt="Chat Icon">
             <span>糯米团.exe</span>
         </div>
-
-        <div id="rss-reader-icon" class="desktop-icon">
-            <img src="rss.ico" alt="RSS Icon">
-            <span>RSS 阅读器.exe</span>
-        </div>
         
         <div id="ai-app-icon" class="desktop-icon">
             <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAKvSURBVFhH7ZddSFRhGMd/d85cuuacmXNOWTqXSmVpBQUFRfQDoeiHBVEgBC+Loj6kKCiioJ76ICoKiiDoIfQjqIcgKIIUKTMrS0szpbv/+/beO+fO3TtnzsyzL/s/5pnnnO/z/D7feR5nBCxgARvYIvB/BIgGq4FqIBWIBy3gGngDPoEP4C7Q4g54Az6AG+A+S9jAfeA+OEuymTPgQZABGoEi4XewDdwD3gGbgAdgO/gMnoGT4DVwHegGfgSrgM1gEHgf9IET4CawEagGGoE+sA3cBO4DG0AH6AZnQTRoA1eBfWAYWAsmQQsYBy7gWsgD0y1gDjgCLgPXgS/B8h/BGeAbWAQ2gZsh/gU8A8eBx0AjsBAsgS+hC/wbWAg2gY3gKpgCJvwe2g58CqZANHgbzIXt4DVwGXgYtARzQBdoBT2gA3QCvYEOUAfaQDwoA/FghogH40AcGAfCgQnQAHaBCtACGoDGoAU0gFagDzwP/gFfgX/hJkga/Ae+B/+A/+A98B/4AvyHtwD/wA+gEfg//A38H/4H/gd/gH/D7wT+h7eB/8Ff4D/wM4B/z/eA35U1wP9wD/gbXAX+g5+A/8NdwD/nB+A/cA/4G7wD/Aeugv/BDeB/cBv4D7wA/oObwP/gpqj+M/A/+A1sBP+BW8D/4BawF3wH/gf3gD9AF9gCtvwezgE/gFbgL3AUeB58AeZDJfg1tAWOgVdgKdgChsBTYBnYBWbBfLAd7AZnwT7QBHbCGeAmsAwsh9tBDBgLBsHysB5Mgt1gMdgCJsAEuAyugp1gLxgHNsPJsBDsAsPhYmAP2AgOwG74HrgJ/AhOAzvBEXAc9IFb4Tq4BnyP5+A++I/V4X7QCzwPOkAPOAvSgT7QBJqBbuBqMA90gz5wBqQDr+P/DqTBC/AfuB4cA4fhPrAFHAbHwG74X/gW/iPdwO3gMHARbIID4BzYDL7E61AFBoEocCisgW0h+DswA7aDlbADnAfHwGFwFBwCh+AocAwcAsdgCjgEh8Bx4BicBEfAYXACnAGHwGlwAhyG0+AEOASnwAlwFE6AU+AInAKnwBE4Ba/ADbgBbsMreAUuwSvwClyCV+AWuAWuwCtww12fAxeBq8Bl4Dq4GjwPXgeuA9ehS4CLwA1wHXgJuApcBC4CV4CrwDXgeuAqcA14FbgKXAUugauB68A14BpIDbgOXE+HBHBDgqA08L2KjM+fC/8B3mZ0pE48W2YAAAAASUVORK5CYII=" alt="AI Icon">
@@ -69,40 +64,6 @@
             </div>
         </div>
 
-        <div id="rss-reader-screen" class="window screen" style="max-width: 900px;">
-            <div class="title-bar">
-                <span class="title-bar-text">Netscape RSS Navigator</span>
-                <div class="title-bar-controls">
-                    <button class="button-control" id="rss-minimize-btn">_</button>
-                    <button class="button-control" id="rss-maximize-btn">❐</button>
-                    <button class="button-control" id="rss-close-btn">X</button>
-                </div>
-            </div>
-            <ul class="menu-bar">
-                <li><u>F</u>ile</li><li><u>E</u>dit</li><li><u>V</u>iew</li><li><u>G</u>o</li><li><u>B</u>ookmarks</li><li><u>O</u>ptions</li><li><u>D</u>irectory</li><li><u>H</u>elp</li>
-            </ul>
-            <div class="rss-toolbar">
-                <button id="rss-back-btn" disabled>Back</button><button id="rss-forward-btn" disabled>Forward</button><button id="rss-reload-btn">Reload</button><button id="rss-add-bookmark-btn">Add Bookmark</button><button id="rss-bookmarks-btn">Bookmarks</button>
-            </div>
-            <div class="location-bar">
-                <label for="rss-url-input">Location:</label><input type="text" id="rss-url-input" value="https://rsshub.app/theverge"><button id="fetch-rss-btn">Go</button>
-            </div>
-            <div class="rss-main-content window-body">
-                <div id="rss-bookmarks-panel" class="sunken-panel">
-                    <h4>Bookmarks</h4>
-                    <ul id="bookmarks-list"></ul>
-                </div>
-                <div id="rss-list-panel" class="sunken-panel"></div>
-                <div id="rss-article-panel" class="sunken-panel">
-                    <p>Select an item from the list to read.</p>
-                </div>
-            </div>
-            <div class="status-bar">
-                <p id="rss-status-text" class="status-bar-field">Done</p>
-                <p id="rss-item-count" class="status-bar-field"></p>
-            </div>
-        </div>
-        
         <div id="ai-chat-screen" class="chat-window window screen">
             <div class="title-bar">
                 <span class="title-bar-text">DeepSeek AI Assistant</span>

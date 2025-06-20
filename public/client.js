@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const apps = {
         'chat': { icon: document.getElementById('chat-app-icon'), window: document.getElementById('chat-screen'), closeBtn: document.getElementById('chat-close-btn'), minimizeBtn: document.getElementById('minimize-btn'), maximizeBtn: document.getElementById('maximize-btn'), title: '糯米团 v1.0' },
-        'rss': { icon: document.getElementById('rss-reader-icon'), window: document.getElementById('rss-reader-screen'), closeBtn: document.getElementById('rss-close-btn'), minimizeBtn: document.getElementById('rss-minimize-btn'), maximizeBtn: document.getElementById('rss-maximize-btn'), title: 'Netscape RSS' },
         'ai': { icon: document.getElementById('ai-app-icon'), window: document.getElementById('ai-chat-screen'), closeBtn: document.getElementById('ai-close-btn'), minimizeBtn: document.getElementById('ai-minimize-btn'), maximizeBtn: document.getElementById('ai-maximize-btn'), title: 'DeepSeek AI' },
         'login': { window: document.getElementById('login-screen'), closeBtn: document.getElementById('login-close-btn') },
         'nickname': { window: document.getElementById('nickname-screen'), closeBtn: document.getElementById('nickname-close-btn') },
