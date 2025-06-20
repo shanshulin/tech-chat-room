@@ -406,7 +406,7 @@ button:active {
 .title-bar { cursor: move; }
 body.dragging-active { cursor: move; user-select: none; }
 
-/* ▼▼▼ 新增 AI 聊天窗口样式 ▼▼▼ */
+/* ▼▼▼ AI 聊天窗口样式 & Markdown 样式 ▼▼▼ */
 .messages .user-message {
     text-align: right;
     margin-left: 40px;
@@ -426,5 +426,29 @@ body.dragging-active { cursor: move; user-select: none; }
     text-align: center;
     color: #808080;
     font-style: italic;
+}
+
+/* AI 回复的 Markdown 格式美化 */
+.messages .ai-message ul,
+.messages .ai-message ol {
+    padding-left: 20px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.messages .ai-message h1,
+.messages .ai-message h2,
+.messages .ai-message h3 {
+    margin-top: 10px;
+    margin-bottom: 5px;
+    font-size: 1.1em; /* 调整标题大小以适应窗口 */
+}
+
+.messages .ai-message p {
+    margin: 5px 0; /* 段落间增加一些间距 */
+}
+
+.messages .ai-message strong {
+    font-weight: bold; /* 确保 **text** 是粗体 */
 }
 /* ▲▲▲ 新增结束 ▲▲▲ */

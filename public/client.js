@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskbarApps = document.getElementById('taskbar-apps');
     const clockElement = document.getElementById('clock');
     
-    // ▼▼▼ apps 对象中新增 'ai' ▼▼▼
     const apps = {
         'chat': { icon: document.getElementById('chat-app-icon'), window: document.getElementById('chat-screen'), closeBtn: document.getElementById('chat-close-btn'), minimizeBtn: document.getElementById('minimize-btn'), maximizeBtn: document.getElementById('maximize-btn'), title: '糯米团 v1.0' },
         'rss': { icon: document.getElementById('rss-reader-icon'), window: document.getElementById('rss-reader-screen'), closeBtn: document.getElementById('rss-close-btn'), minimizeBtn: document.getElementById('rss-minimize-btn'), maximizeBtn: document.getElementById('rss-maximize-btn'), title: 'Netscape RSS' },
@@ -16,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
         'nickname': { window: document.getElementById('nickname-screen'), closeBtn: document.getElementById('nickname-close-btn') },
         'search': { window: document.getElementById('search-window'), closeBtn: document.getElementById('search-close-btn') }
     };
-    // ▲▲▲ 新增结束 ▲▲▲
 
     const loginBtn = document.getElementById('login-btn');
     const passwordInput = document.getElementById('password-input');
@@ -54,11 +52,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const rssBookmarksPanel = document.getElementById('rss-bookmarks-panel');
     const bookmarksList = document.getElementById('bookmarks-list');
 
-    // ▼▼▼ 新增 AI 机器人相关元素 ▼▼▼
+    // AI 机器人相关元素
     const aiMessages = document.getElementById('ai-messages');
     const aiInput = document.getElementById('ai-input');
     const aiSendBtn = document.getElementById('ai-send-btn');
-    // ▲▲▲ 新增结束 ▲▲▲
     
     // --- 状态变量 ---
     const socket = io({ reconnection: true, reconnectionDelay: 1000, reconnectionDelayMax: 5000, reconnectionAttempts: Infinity });
@@ -73,9 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentFeedTitle = '';
     let currentFeedItems = [];
 
-    // ▼▼▼ 新增 AI 机器人状态变量 ▼▼▼
-    let aiConversationHistory = [{ role: 'system', content: 'You are a helpful assistant.' }];
-    // ▲▲▲ 新增结束 ▲▲▲
+    // AI 机器人状态变量
+    let aiConversationHistory = [{ role: 'system', content: 'You are a helpful assistant. Please format your response using Markdown.' }];
 
     // --- 窗口管理器 ---
     const windowManager = { /* ... (窗口管理器代码保持不变) ... */ };
@@ -168,15 +164,17 @@ document.addEventListener('DOMContentLoaded', () => {
     async function uploadImage(file) { if (!file || !file.type.startsWith('image/')) return; addSystemMessage(`正在上传图片: ${file.name || 'clipboard_image.png'}...`); const formData = new FormData(); formData.append('image', file); try { const response = await fetch('/upload', { method: 'POST', body: formData }); if (!response.ok) throw new Error('上传失败'); const result = await response.json(); socket.emit('chat message', { type: 'image', msg: result.imageUrl }); } catch (error) { console.error('上传出错:', error); addSystemMessage(`图片上传失败。`); } }
     function updateClock() { const now = new Date(); const hours = String(now.getHours()).padStart(2, '0'); const minutes = String(now.getMinutes()).padStart(2, '0'); clockElement.textContent = `${hours}:${minutes}`; }
 
-    // ▼▼▼ 新增: AI 聊天核心功能 ▼▼▼
+    // ▼▼▼ 修改: AI 聊天核心功能 - 使用 marked.js 解析回复 ▼▼▼
     function addAiChatMessage(role, text) {
         const item = document.createElement('div');
         if (role === 'user') {
             item.className = 'user-message';
+            // 为了安全，用户的输入不进行HTML解析
             item.textContent = `You: ${text}`;
         } else if (role === 'assistant') {
             item.className = 'ai-message';
-            item.innerHTML = `<b>AI:</b> ${text}`;
+            // 使用 marked.js 将AI的Markdown回复转换为HTML
+            item.innerHTML = `<b>AI:</b> ${marked.parse(text)}`;
         } else if (role === 'thinking') {
             item.className = 'thinking-message';
             item.id = 'thinking-indicator';
@@ -189,6 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
         aiMessages.scrollTop = aiMessages.scrollHeight;
         return item;
     }
+    // ▲▲▲ 修改结束 ▲▲▲
 
     async function sendAiMessage() {
         const messageText = aiInput.value.trim();
@@ -228,9 +227,8 @@ document.addEventListener('DOMContentLoaded', () => {
             aiInput.focus();
         }
     }
-    // ▲▲▲ 新增结束 ▲▲▲
 
-    // ... (RSS 功能函数保持不变) ...
+    // RSS 功能函数
     async function fetchRss(url, addToHistory = true) { if (!url) { alert('请输入一个有效的RSS源地址！'); return; } rssStatusText.textContent = `Loading ${url}...`; rssListPanel.innerHTML = ''; rssArticlePanel.innerHTML = '<p>Select an item from the list to read.</p>'; rssItemCount.textContent = ''; try { const response = await fetch(`/parse-rss?url=${encodeURIComponent(url)}`); if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.error || '无法解析RSS源'); } const feed = await response.json(); rssUrlInput.value = url; currentFeedTitle = feed.title || 'Untitled Feed'; currentFeedItems = feed.items || []; displayRssList(feed); if (addToHistory) { rssHistory = rssHistory.slice(0, rssCurrentIndex + 1); rssHistory.push(url); rssCurrentIndex++; } updateRssNavButtons(); } catch (error) { rssStatusText.textContent = `Error!`; rssListPanel.innerHTML = `<p style="padding: 10px;">加载失败: ${error.message}</p>`; } }
     function displayRssList(feed) { rssListPanel.innerHTML = ''; if (currentFeedItems.length > 0) { currentFeedItems.forEach((item, index) => { const itemDiv = document.createElement('div'); itemDiv.className = 'rss-list-item'; const itemTitle = document.createElement('h3'); itemTitle.textContent = item.title || 'No Title'; const itemDate = document.createElement('p'); itemDate.textContent = item.pubDate ? new Date(item.pubDate).toLocaleString() : '未知日期'; itemDiv.appendChild(itemTitle); itemDiv.appendChild(itemDate); itemDiv.addEventListener('click', () => { displayArticleContent(index); document.querySelectorAll('.rss-list-item').forEach(el => el.classList.remove('active')); itemDiv.classList.add('active'); }); rssListPanel.appendChild(itemDiv); }); rssStatusText.textContent = 'Done'; rssItemCount.textContent = `${currentFeedItems.length} items`; if (currentFeedItems.length > 0) { displayArticleContent(0); rssListPanel.querySelector('.rss-list-item').classList.add('active'); } } else { rssListPanel.innerHTML = '<p style="padding: 10px;">这个RSS源中没有文章。</p>'; rssStatusText.textContent = 'Done'; rssItemCount.textContent = '0 items'; } }
     function displayArticleContent(index) { const item = currentFeedItems[index]; if (!item) return; rssArticlePanel.innerHTML = ''; const title = document.createElement('h2'); const titleLink = document.createElement('a'); titleLink.href = item.link; titleLink.textContent = item.title || 'No Title'; titleLink.target = '_blank'; title.appendChild(titleLink); const content = document.createElement('div'); content.innerHTML = item.content || item.contentSnippet || '<p>No content available.</p>'; rssArticlePanel.appendChild(title); rssArticlePanel.appendChild(content); rssArticlePanel.scrollTop = 0; }
@@ -296,10 +294,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (url) { const title = prompt("请输入书签的名称:", currentFeedTitle || url); if (title) saveBookmark(title, url); } else { alert('地址栏是空的，无法添加书签。'); }
     });
     
-    // ▼▼▼ 新增: AI 聊天事件绑定 ▼▼▼
+    // AI 聊天事件绑定
     aiSendBtn.addEventListener('click', sendAiMessage);
     aiInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendAiMessage(); });
-    // ▲▲▲ 新增结束 ▲▲▲
 
     // --- 初始化 ---
     updateClock();
