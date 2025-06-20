@@ -22,11 +22,12 @@ body {
     padding: 10px;
 }
 
+/* ★★★ 核心修复：确保所有 .screen 默认都是隐藏的 ★★★ */
 .screen {
-    display: none;
+    display: none; 
 }
 .screen.active {
-    display: flex;
+    display: flex; /* 使用 flex 替代 block，因为我们的窗口内部布局依赖它 */
     flex-direction: column;
 }
 
@@ -39,7 +40,12 @@ body {
     text-align: center;
     cursor: pointer;
     padding: 5px;
+    position: absolute; /* 让图标可以被定位 */
 }
+/* 为图标设置初始位置 */
+#chat-app-icon { top: 10px; left: 10px; }
+#ai-app-icon { top: 100px; left: 10px; }
+
 
 .desktop-icon img {
     width: 32px;
@@ -115,14 +121,11 @@ body {
     box-shadow: 1px 1px 0 #000, 2px 2px 0 #000;
     width: 90%;
     max-width: 500px;
-    
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 10;
-    
-    flex-direction: column;
 }
 
 .title-bar {
@@ -186,190 +189,44 @@ body {
     flex-direction: column;
 }
 
-.window-body h1 {
-    font-size: 1.2em;
-    margin-top: 0;
-}
-
-.window-body p {
-    margin: 15px 0 5px;
-}
-
-.error {
-    color: #ff0000;
-    height: 20px;
-    font-weight: bold;
-}
+.window-body h1 { font-size: 1.2em; margin-top: 0; }
+.window-body p { margin: 15px 0 5px; }
+.error { color: #ff0000; height: 20px; font-weight: bold; }
 
 /* --- 按钮和输入框 --- */
-input[type="password"],
-input[type="text"] {
-    width: 90%;
-    padding: 5px;
-    border: 2px solid;
-    border-top-color: #000000;
-    border-left-color: #000000;
-    border-right-color: #ffffff;
-    border-bottom-color: #ffffff;
-    background: #ffffff;
-    font-family: 'VT323', monospace;
-    font-size: 16px;
+input[type="password"], input[type="text"] {
+    width: 90%; padding: 5px; border: 2px solid; border-top-color: #000000; border-left-color: #000000; border-right-color: #ffffff; border-bottom-color: #ffffff; background: #ffffff; font-family: 'VT323', monospace; font-size: 16px;
 }
+input:focus { outline: none; }
 
-input:focus {
-    outline: none;
-}
-
-button {
-    padding: 8px 20px;
-    background: #c0c0c0;
-    border: 1px solid;
-    border-top-color: #fff;
-    border-left-color: #fff;
-    border-right-color: #000;
-    border-bottom-color: #000;
-    box-shadow: 1px 1px 0 #000;
-    font-family: 'VT323', monospace;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-button:active {
-    border-top-color: #000;
-    border-left-color: #000;
-    border-right-color: #fff;
-    border-bottom-color: #fff;
-    box-shadow: none;
-    transform: translate(1px, 1px);
-}
-
-.window-body button {
-    align-self: center;
-    margin-top: 15px;
-}
+button { padding: 8px 20px; background: #c0c0c0; border: 1px solid; border-top-color: #fff; border-left-color: #fff; border-right-color: #000; border-bottom-color: #000; box-shadow: 1px 1px 0 #000; font-family: 'VT323', monospace; font-size: 16px; cursor: pointer; }
+button:active { border-top-color: #000; border-left-color: #000; border-right-color: #fff; border-bottom-color: #fff; box-shadow: none; transform: translate(1px, 1px); }
+.window-body button { align-self: center; margin-top: 15px; }
 
 /* --- 聊天窗口 --- */
-#users-list-window {
-    width: 180px;
-    height: 450px;
-    top: 15%;
-    left: 10%;
-    transform: none;
-    z-index: 11;
-}
-
-.chat-window {
-    width: 700px;
-    height: 450px;
-    top: 15%;
-    left: calc(10% + 190px);
-    transform: none;
-    max-width: none;
-}
-
-.chat-container {
-    display: flex;
-    padding: 0;
-    flex-grow: 1;
-    overflow: hidden;
-}
-
-#users-list-container {
-    width: auto;
-    padding: 10px;
-    border-right: none;
-    margin-right: 0;
-    flex-shrink: 1;
-    text-align: left;
-}
-
+#users-list-window { width: 180px; height: 450px; top: 15%; left: 10%; transform: none; z-index: 11; }
+.chat-window { width: 700px; height: 450px; top: 15%; left: calc(10% + 190px); transform: none; max-width: none; }
+.chat-container { display: flex; padding: 0; flex-grow: 1; overflow: hidden; }
+#users-list-container { width: auto; padding: 10px; border-right: none; margin-right: 0; flex-shrink: 1; text-align: left; }
 #users-list-container p { display: none; }
-
-#users-list { 
-    list-style: none; 
-    padding: 0; 
-    margin: 0; 
-    height: 100%;
-    overflow-y: auto; 
-    text-align: left;
-}
+#users-list { list-style: none; padding: 0; margin: 0; height: 100%; overflow-y: auto; text-align: left; }
 #users-list li { padding: 2px 5px; margin-bottom: 5px; display: flex; align-items: center; }
 #users-list li::before { content: ''; display: inline-block; width: 16px; height: 16px; background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAKtJREFUOI1jZGBgEGHAD97/UP///wMYgABiJmJgZWBgrsDBxMTECPz//w+G/Pz8D6Y2NDSMpDU1NUOcAAmg9vj4CcPS0tJ/kNqSkhLgLDAw8D+amZkR5AAyINpiY2OF2YABiJkGgvz//w8GqJ2dnaGkYGalY2BgYWBgaGFh4X+GjIyMDKY9Pz8/yAFU4OJi438gSgEqYWBgYGRgYODj42NwsbCwsDDjPzAwUGMAAEV8Rv25pKyKAAAAAElFTkSuQmCC'); margin-right: 5px; }
 
 .chat-main { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
-.messages { 
-    flex-grow: 1; 
-    height: 300px; 
-    background: #fff; 
-    padding: 10px; 
-    overflow-y: scroll; 
-    border: 2px solid; 
-    border-top-color: #000; 
-    border-left-color: #000; 
-    border-right-color: #fff; 
-    border-bottom-color: #fff; 
-    margin-bottom: 0;
-    line-height: 1.4; 
-    text-align: left; 
-}
+.messages { flex-grow: 1; height: 300px; background: #fff; padding: 10px; overflow-y: scroll; border: 2px solid; border-top-color: #000; border-left-color: #000; border-right-color: #fff; border-bottom-color: #fff; margin-bottom: 0; line-height: 1.4; text-align: left; }
 .messages .system-message { text-align: center; color: #808080; }
 .messages .nickname { font-weight: bold; }
-
-.chat-input-area { 
-    display: flex; 
-    flex-shrink: 0; 
-    align-items: center; 
-    padding: 4px 0;
-}
-
-#input, #ai-input { 
-    flex: 1; 
-    margin: 0; 
-    margin-right: 10px;
-    padding: 5px;
-    border: 2px solid;
-    border-top-color: #000000;
-    border-left-color: #000000;
-    border-right-color: #ffffff;
-    border-bottom-color: #ffffff;
-    background: #ffffff;
-    font-family: 'VT323', monospace;
-    font-size: 16px;
-    height: 30px;
-    box-sizing: border-box;
-}
-
-#send-btn, #ai-send-btn { 
-    width: 80px; 
-    height: 30px;
-    box-sizing: border-box;
-    padding: 0 15px;
-}
-
+.chat-input-area { display: flex; flex-shrink: 0; align-items: center; padding: 4px 0; }
+#input, #ai-input { flex: 1; margin: 0; margin-right: 10px; padding: 5px; border: 2px solid; border-top-color: #000000; border-left-color: #000000; border-right-color: #ffffff; border-bottom-color: #ffffff; background: #ffffff; font-family: 'VT323', monospace; font-size: 16px; height: 30px; box-sizing: border-box; }
+#send-btn, #ai-send-btn { width: 80px; height: 30px; box-sizing: border-box; padding: 0 15px; }
 .timestamp { color: #808080; margin-right: 8px; font-size: 14px; }
-
-.toolbar { 
-    position: relative; 
-    border-top: 2px solid #808080; 
-    padding: 4px 2px;
-    display: flex; 
-    gap: 2px; 
-    flex-shrink: 0; 
-}
-
-.toolbar-btn { 
-    width: auto; 
-    height: 28px; 
-    padding: 0 8px; 
-    font-size: 16px; 
-    line-height: 28px; 
-}
-
+.toolbar { position: relative; border-top: 2px solid #808080; padding: 4px 2px; display: flex; gap: 2px; flex-shrink: 0; }
+.toolbar-btn { width: auto; height: 28px; padding: 0 8px; font-size: 16px; line-height: 28px; }
 .emoji-panel { position: absolute; bottom: 100%; left: 0; background: #c0c0c0; border: 1px solid; border-top-color: #ffffff; border-left-color: #ffffff; border-right-color: #000000; border-bottom-color: #000000; padding: 5px; display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 5px; box-shadow: 1px 1px 0 #000; width: 100%; box-sizing: border-box; }
 .emoji-panel.hidden { display: none; }
 .emoji-item { padding: 5px; text-align: center; cursor: pointer; border: 1px solid transparent; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .emoji-item:hover { border-color: #000080; background: #e0e0e0; }
-
 .chat-image { max-width: 200px; max-height: 150px; border: 2px solid #808080; background: #fff; padding: 2px; cursor: pointer; display: block; margin-top: 4px; }
 .chat-image:hover { border-color: #000080; }
 
@@ -403,69 +260,27 @@ body.dragging-active { cursor: move; user-select: none; }
 .ai-toolbar input[type="checkbox"] { margin-right: 5px; }
 .ai-toolbar select { margin-left: 10px; background: #c0c0c0; border: 1px solid; border-top-color: #808080; border-left-color: #808080; border-right-color: #fff; border-bottom-color: #fff; font-family: 'VT323', monospace; font-size: 14px; padding: 2px; }
 
-/* --- ★★★ 搜索窗口的布局和结果样式 (最终优化版) ★★★ --- */
-.search-window-body {
-    padding: 10px !important;
-    text-align: left;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
+/* --- 搜索窗口的布局和结果样式 --- */
+.search-window-body { padding: 10px !important; text-align: left; display: flex; flex-direction: column; overflow: hidden; }
+.search-controls { display: flex; flex-direction: column; gap: 8px; border-bottom: 2px solid #808080; padding-bottom: 10px; margin-bottom: 10px; flex-shrink: 0; }
+.control-group { display: flex; align-items: center; }
+.control-group label { width: 70px; flex-shrink: 0; }
+.control-group input[type="text"], .control-group select { flex-grow: 1; }
+.search-results-container { flex-grow: 1; background: #ffffff; padding: 10px; overflow-y: auto; border: 2px solid; border-top-color: #000; border-left-color: #000; border-right-color: #fff; border-bottom-color: #fff; min-height: 100px; }
+.search-results-container .message-item { border-bottom: 1px dotted #a0a0a0; padding-bottom: 4px; margin-bottom: 4px; }
+.search-results-container .message-item:last-child { border-bottom: none; }
 
-.search-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    border-bottom: 2px solid #808080;
-    padding-bottom: 10px;
-    margin-bottom: 10px;
-    flex-shrink: 0; /* 确保搜索控件区域不被压缩 */
-}
+/* --- ★★★ 窗口最终高度/排版修复 ★★★ --- */
+#search-window { height: 450px; }
 
-.control-group {
-    display: flex;
-    align-items: center;
-}
-
-.control-group label {
-    width: 70px;
-    flex-shrink: 0;
-}
-
-.control-group input[type="text"], .control-group select {
-    flex-grow: 1;
-}
-
-.search-results-container {
-    flex-grow: 1; /* 占据所有剩余空间 */
-    background: #ffffff;
-    padding: 10px;
-    overflow-y: auto; /* 内容超出时，自动出现滚动条 */
-    border: 2px solid;
-    border-top-color: #000;
-    border-left-color: #000;
-    border-right-color: #fff;
-    border-bottom-color: #fff;
-    min-height: 100px; /* 保证没结果时也有一定高度 */
-}
-
-/* 复用 message-item 样式，并添加分隔线 */
+/* 精准控制聊天记录和搜索结果的排版，不影响其他元素 */
+#messages .message-item,
 .search-results-container .message-item {
-    border-bottom: 1px dotted #a0a0a0;
-    padding-bottom: 4px;
-    margin-bottom: 4px;
-}
-
-.search-results-container .message-item:last-child {
-    border-bottom: none;
-}
-/* --- ★★★ 搜索窗口最终高度修复 ★★★ --- */
-#search-window {
-    /* 给搜索窗口一个和主聊天窗口一样的高度 */
-    height: 450px; 
-    
-    /* 我们已经对 .search-window-body 使用了 flex-direction: column
-       所以这个窗口本身也需要是 flex 容器才能让内部布局生效 */
     display: flex;
-    flex-direction: column;
+    align-items: flex-start;
+}
+#messages .timestamp,
+.search-results-container .timestamp {
+    width: 140px;
+    flex-shrink: 0;
 }
