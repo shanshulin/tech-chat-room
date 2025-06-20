@@ -1,4 +1,4 @@
-// server.js (最终强化版)
+// server.js (模型切换为 deepseek-reasoner)
 
 require('dotenv').config();
 
@@ -13,7 +13,7 @@ const Parser = require('rss-parser');
 const iconv = require('iconv-lite');
 const streamifier = require('streamifier');
 const OpenAI = require('openai');
-const axios =require('axios');
+const axios = require('axios');
 
 const parser = new Parser();
 
@@ -39,103 +39,50 @@ app.post('/upload', upload.single('image'), (req, res) => { if (!req.file) { ret
 app.get('/parse-rss', async (req, res) => { const feedUrl = req.query.url; if (!feedUrl) { return res.status(400).json({ error: 'RSS URL is required' }); } try { const feed = await parser.parseURL(feedUrl); res.json(feed); } catch (error) { console.error(`Failed to parse RSS feed from ${feedUrl}:`, error); try { const response = await axios.get(feedUrl, { responseType: 'arraybuffer' }); const decodedBody = iconv.decode(response.data, 'gb2312'); const feed = await parser.parseString(decodedBody); res.json(feed); } catch (gbkError) { res.status(500).json({ error: 'Failed to parse RSS feed with standard and fallback encodings.' }); } } });
 
 
-// ▼▼▼ 智能代理核心：定义多个工具 ▼▼▼
-const tools = [
-    {
-        type: "function",
-        function: {
-            name: "web_search",
-            description: "当需要回答关于时事、人物、事件、定义或任何需要当前或实时信息的问题时，使用此工具进行网络搜索。",
-            parameters: {
-                type: "object",
-                properties: {
-                    query: { type: "string", description: "用于搜索引擎的、简洁明了的搜索查询词。例如：'美国现任总统' 或 '2024年欧洲杯冠军'。" },
-                },
-                required: ["query"],
-            },
-        },
-    },
-    {
-        type: "function",
-        function: {
-            name: "get_current_time",
-            description: "获取当前的日期和时间。",
-            parameters: { type: "object", properties: {} },
-        },
-    }
-];
-
-const availableTools = {
-    "web_search": async ({ query }) => {
-        console.log(`Executing Google web_search with query: "${query}"`);
-        const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
-        const cx = process.env.GOOGLE_SEARCH_CX;
-        const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(query)}`;
-        try {
-            const response = await axios.get(url);
-            if (!response.data.items || response.data.items.length === 0) {
-                return JSON.stringify({ "info": "No search results found." });
-            }
-            const results = response.data.items.map(item => ({ title: item.title, snippet: item.snippet }));
-            return JSON.stringify(results.slice(0, 5));
-        } catch (error) {
-            console.error("Google Search API error:", error.response ? error.response.data.error.message : error.message);
-            // 返回一个对AI更友好的错误信息
-            return JSON.stringify({ error: `Google Search API failed. Reason: ${error.response ? error.response.data.error.message : error.message}` });
-        }
-    },
-    "get_current_time": async () => {
-        console.log("Executing get_current_time tool.");
-        return new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
-    }
-};
-// ▲▲▲ 智能代理核心结束 ▲▲▲
+// ... (工具定义 availableTools 保持不变) ...
+const tools = [ { type: "function", function: { name: "get_weibo_hot_search", description: "获取当前实时的微博热搜榜单。当用户明确提到'微博'、'热搜'或想要了解社交媒体上的热门话题时使用。", parameters: { type: "object", properties: {} }, }, }, { type: "function", function: { name: "web_search", description: "当需要回答通用问题、时事、人物、事件、定义，或者在没有更专业的工具可用时，使用此工具进行网络搜索。", parameters: { type: "object", properties: { query: { type: "string", description: "用于搜索引擎的、简洁明了的搜索查询词。" } }, required: ["query"], }, }, }, { type: "function", function: { name: "get_current_time", description: "获取当前的日期和时间。", parameters: { type: "object", properties: {} }, }, } ];
+const availableTools = { "get_weibo_hot_search": async () => { console.log("Executing get_weibo_hot_search tool."); const rsshubUrl = 'https://rsshub.app/weibo/search/hot'; try { const response = await axios.get(`http://localhost:${process.env.PORT || 3000}/parse-rss?url=${encodeURIComponent(rsshubUrl)}`); if (!response.data || !response.data.items) { return JSON.stringify({ error: "Failed to parse Weibo hot search data." }); } const hotSearches = response.data.items.map(item => ({ title: item.title, link: item.link, })); return JSON.stringify(hotSearches); } catch (error) { console.error("Weibo hot search fetch error:", error); return JSON.stringify({ error: "Sorry, failed to fetch Weibo hot search." }); } }, "web_search": async ({ query }) => { console.log(`Executing Google web_search with query: "${query}"`); const apiKey = process.env.GOOGLE_SEARCH_API_KEY; const cx = process.env.GOOGLE_SEARCH_CX; const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(query)}`; try { const response = await axios.get(url); if (!response.data.items || response.data.items.length === 0) { return JSON.stringify({ "info": "No search results found." }); } const results = response.data.items.map(item => ({ title: item.title, snippet: item.snippet })); return JSON.stringify(results.slice(0, 5)); } catch (error) { console.error("Google Search API error:", error.response ? error.response.data.error.message : error.message); return JSON.stringify({ error: `Google Search API failed. Reason: ${error.response ? error.response.data.error.message : error.message}` }); } }, "get_current_time": async () => { console.log("Executing get_current_time tool."); return new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }); } };
 
 
-// AI 聊天 API 路由 (强化版)
+// AI 聊天 API 路由
 app.post('/api/ai-chat', async (req, res) => {
     const { history, use_network } = req.body; 
     if (!history || !history.length) { return res.status(400).json({ error: 'Conversation history is required.' }); }
 
     try {
-        const payload = { model: "deepseek-chat", messages: history };
+        // ▼▼▼ 修改: 将模型切换为 deepseek-reasoner ▼▼▼
+        const model_to_use = "deepseek-reasoner"; 
+        console.log(`Using model: ${model_to_use}`);
+        // ▲▲▲ 修改结束 ▲▲▲
 
+        const payload = { model: model_to_use, messages: history };
         if (use_network) {
-            console.log("Network search is ENABLED, providing tools to AI.");
             payload.tools = tools;
             payload.tool_choice = "auto";
-        } else {
-            console.log("Network search is DISABLED.");
         }
 
         const initialResponse = await deepseek.chat.completions.create(payload);
         const message = initialResponse.choices[0].message;
 
         if (use_network && message.tool_calls) {
-            history.push(message); // 将AI的工具调用决定加入历史
+            history.push(message);
             const toolCall = message.tool_calls[0];
             const functionName = toolCall.function.name;
             const functionArgs = toolCall.function.arguments ? JSON.parse(toolCall.function.arguments) : {};
-            
             console.log(`AI decided to use the tool: ${functionName}`);
-
             const toolToExecute = availableTools[functionName];
-            
             if (toolToExecute) {
                 const toolResult = await toolToExecute(functionArgs);
-                console.log(`Tool ${functionName} returned:`, toolResult);
                 history.push({ tool_call_id: toolCall.id, role: "tool", name: functionName, content: toolResult });
             } else {
                  const errorContent = `Error: Tool '${functionName}' not found.`;
-                 console.error(errorContent);
                  history.push({ tool_call_id: toolCall.id, role: "tool", name: functionName, content: JSON.stringify({ error: errorContent })});
             }
-            
-            console.log("Sending final request to AI with tool result...");
-            const finalResponse = await deepseek.chat.completions.create({ model: "deepseek-chat", messages: history });
+            // ▼▼▼ 修改: 确保最终调用也使用新模型 ▼▼▼
+            const finalResponse = await deepseek.chat.completions.create({ model: model_to_use, messages: history });
+            // ▲▲▲ 修改结束 ▲▲▲
             return res.json({ reply: finalResponse.choices[0].message.content });
         } else {
-            console.log("AI directly responding (no tool was used).");
             return res.json({ reply: message.content });
         }
     } catch (error) {
