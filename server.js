@@ -1,4 +1,4 @@
-// server.js (最终精简版: DeepSeek + Google)
+// server.js (切换回 deepseek-chat 稳定版)
 
 require('dotenv').config();
 
@@ -33,6 +33,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.post('/upload', upload.single('image'), (req, res) => { if (!req.file) { return res.status(400).json({ error: 'No file uploaded.' }); } let cld_upload_stream = cloudinary.uploader.upload_stream({ folder: "chat_app" }, (error, result) => { if (error) { console.error('Cloudinary upload error:', error); return res.status(500).json({ error: 'Failed to upload image.' }); } res.status(200).json({ imageUrl: result.secure_url }); }); streamifier.createReadStream(req.file.buffer).pipe(cld_upload_stream); });
 
+
 // --- 智能代理核心 ---
 const tools = [
     {
@@ -58,10 +59,12 @@ const tools = [
 ];
 const availableTools = {
     "web_search": async ({ query }) => {
-        console.log(`Executing Google web_search with query: "${query}"`);
+        const cleanedQuery = query.replace(/\s*\d{4}年(\d{1,2}月)?\s*|\s*\d{4}-\d{1,2}\s*/g, ' ').trim();
+        console.log(`Original query from AI: "${query}"`);
+        console.log(`Executing CLEANED Google web_search with query: "${cleanedQuery}"`);
         const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
         const cx = process.env.GOOGLE_SEARCH_CX;
-        const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(query)}`;
+        const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(cleanedQuery)}`; 
         try { 
             const response = await axios.get(url, { timeout: 20000 });
             if (!response.data.items || response.data.items.length === 0) { return JSON.stringify({ "info": "No search results found." }); } 
@@ -78,8 +81,53 @@ const availableTools = {
     } 
 };
 
-// ... (AI 聊天 API 路由 和 Socket.IO 连接逻辑保持不变) ...
-app.post('/api/ai-chat', async (req, res) => { const { history, use_network } = req.body; if (!history || !history.length) { return res.status(400).json({ error: 'Conversation history is required.' }); } try { const model_to_use = "deepseek-reasoner"; const payload = { model: model_to_use, messages: history }; if (use_network) { payload.tools = tools; payload.tool_choice = "auto"; } const initialResponse = await deepseek.chat.completions.create(payload); const message = initialResponse.choices[0].message; if (use_network && message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length > 0) { const cleanMessage = { role: message.role, tool_calls: message.tool_calls, }; if (message.content) { cleanMessage.content = message.content; } history.push(cleanMessage); const toolCall = message.tool_calls[0]; const functionName = toolCall.function.name; const functionArgs = toolCall.function.arguments ? JSON.parse(toolCall.function.arguments) : {}; console.log(`AI decided to use the tool: ${functionName}`); const toolToExecute = availableTools[functionName]; if (toolToExecute) { const toolResult = await toolToExecute(functionArgs); history.push({ tool_call_id: toolCall.id, role: "tool", name: functionName, content: toolResult }); } else { const errorContent = `Error: Tool '${functionName}' not found.`; history.push({ tool_call_id: toolCall.id, role: "tool", name: functionName, content: JSON.stringify({ error: errorContent })}); } const finalResponse = await deepseek.chat.completions.create({ model: model_to_use, messages: history }); return res.json({ reply: finalResponse.choices[0].message.content }); } else { return res.json({ reply: message.content }); } } catch (error) { console.error('Fatal error in /api/ai-chat route:', error); if (error instanceof OpenAI.APIError) { return res.status(error.status || 500).json({ error: error.message }); } return res.status(500).json({ error: 'An unexpected server error occurred.' }); } });
+// ... (AI 聊天 API 路由 和 Socket.IO 连接逻辑) ...
+app.post('/api/ai-chat', async (req, res) => { 
+    const { history, use_network } = req.body; 
+    if (!history || !history.length) { return res.status(400).json({ error: 'Conversation history is required.' }); } 
+    try { 
+        // ▼▼▼ 修改: 切换回更稳定的 deepseek-chat 模型 ▼▼▼
+        const model_to_use = "deepseek-chat"; 
+        // ▲▲▲ 修改结束 ▲▲▲
+        console.log(`Using model: ${model_to_use}`);
+        const payload = { model: model_to_use, messages: history }; 
+        if (use_network) { 
+            payload.tools = tools; 
+            payload.tool_choice = "auto"; 
+        } 
+        const initialResponse = await deepseek.chat.completions.create(payload); 
+        const message = initialResponse.choices[0].message; 
+        if (use_network && message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length > 0) { 
+            const cleanMessage = { role: message.role, tool_calls: message.tool_calls }; 
+            if (message.content) { 
+                cleanMessage.content = message.content; 
+            } 
+            history.push(cleanMessage); 
+            const toolCall = message.tool_calls[0]; 
+            const functionName = toolCall.function.name; 
+            const functionArgs = toolCall.function.arguments ? JSON.parse(toolCall.function.arguments) : {}; 
+            console.log(`AI decided to use the tool: ${functionName}`); 
+            const toolToExecute = availableTools[functionName]; 
+            if (toolToExecute) { 
+                const toolResult = await toolToExecute(functionArgs); 
+                history.push({ tool_call_id: toolCall.id, role: "tool", name: functionName, content: toolResult }); 
+            } else { 
+                const errorContent = `Error: Tool '${functionName}' not found.`; 
+                history.push({ tool_call_id: toolCall.id, role: "tool", name: functionName, content: JSON.stringify({ error: errorContent })}); 
+            } 
+            const finalResponse = await deepseek.chat.completions.create({ model: model_to_use, messages: history }); 
+            return res.json({ reply: finalResponse.choices[0].message.content }); 
+        } else { 
+            return res.json({ reply: message.content }); 
+        } 
+    } catch (error) { 
+        console.error('Fatal error in /api/ai-chat route:', error); 
+        if (error instanceof OpenAI.APIError) { 
+            return res.status(error.status || 500).json({ error: error.message }); 
+        } 
+        return res.status(500).json({ error: 'An unexpected server error occurred.' }); 
+    } 
+});
 const users = {};
 io.on('connection', async (socket) => { console.log('User connected:', socket.id); try { const result = await pool.query('SELECT nickname, content AS msg, message_type, created_at FROM messages ORDER BY created_at DESC LIMIT 50'); socket.emit('load history', result.rows.reverse()); } catch (err) { console.error('Failed to read history:', err); } socket.on('join', (nickname) => { if (nickname) { socket.nickname = nickname; users[socket.id] = nickname; io.emit('update users', Object.values(users)); socket.broadcast.emit('system message', `“${nickname}”加入了聊天室`); } }); socket.on('chat message', async (data) => { if (socket.nickname && data.msg) { try { const result = await pool.query('INSERT INTO messages (nickname, content, message_type) VALUES ($1, $2, $3) RETURNING created_at', [socket.nickname, data.msg, data.type]); const messageToSend = { nickname: socket.nickname, msg: data.msg, message_type: data.type, created_at: result.rows[0].created_at }; io.emit('chat message', messageToSend); } catch (err) { console.error('Failed to save message:', err); } } }); socket.on('disconnect', () => { if (socket.nickname) { delete users[socket.id]; io.emit('update users', Object.values(users)); io.emit('system message', `“${socket.nickname}”离开了聊天室`); } console.log('User disconnected:', socket.id); }); });
 async function startServer() { await initializeDatabase(); const PORT = process.env.PORT || 3000; server.listen(PORT, () => { console.log(`Server is running successfully on http://localhost:${PORT}`); }); }
