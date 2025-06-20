@@ -22,12 +22,11 @@ body {
     padding: 10px;
 }
 
-/* ★★★ 核心修复：确保所有 .screen 默认都是隐藏的 ★★★ */
 .screen {
     display: none; 
 }
 .screen.active {
-    display: flex; /* 使用 flex 替代 block，因为我们的窗口内部布局依赖它 */
+    display: flex; 
     flex-direction: column;
 }
 
@@ -40,9 +39,8 @@ body {
     text-align: center;
     cursor: pointer;
     padding: 5px;
-    position: absolute; /* 让图标可以被定位 */
+    position: absolute; 
 }
-/* 为图标设置初始位置 */
 #chat-app-icon { top: 10px; left: 10px; }
 #ai-app-icon { top: 100px; left: 10px; }
 
@@ -220,7 +218,6 @@ button:active { border-top-color: #000; border-left-color: #000; border-right-co
 .chat-input-area { display: flex; flex-shrink: 0; align-items: center; padding: 4px 0; }
 #input, #ai-input { flex: 1; margin: 0; margin-right: 10px; padding: 5px; border: 2px solid; border-top-color: #000000; border-left-color: #000000; border-right-color: #ffffff; border-bottom-color: #ffffff; background: #ffffff; font-family: 'VT323', monospace; font-size: 16px; height: 30px; box-sizing: border-box; }
 #send-btn, #ai-send-btn { width: 80px; height: 30px; box-sizing: border-box; padding: 0 15px; }
-.timestamp { color: #808080; margin-right: 8px; font-size: 14px; }
 .toolbar { position: relative; border-top: 2px solid #808080; padding: 4px 2px; display: flex; gap: 2px; flex-shrink: 0; }
 .toolbar-btn { width: auto; height: 28px; padding: 0 8px; font-size: 16px; line-height: 28px; }
 .emoji-panel { position: absolute; bottom: 100%; left: 0; background: #c0c0c0; border: 1px solid; border-top-color: #ffffff; border-left-color: #ffffff; border-right-color: #000000; border-bottom-color: #000000; padding: 5px; display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 5px; box-shadow: 1px 1px 0 #000; width: 100%; box-sizing: border-box; }
@@ -267,20 +264,44 @@ body.dragging-active { cursor: move; user-select: none; }
 .control-group label { width: 70px; flex-shrink: 0; }
 .control-group input[type="text"], .control-group select { flex-grow: 1; }
 .search-results-container { flex-grow: 1; background: #ffffff; padding: 10px; overflow-y: auto; border: 2px solid; border-top-color: #000; border-left-color: #000; border-right-color: #fff; border-bottom-color: #fff; min-height: 100px; }
-.search-results-container .message-item { border-bottom: 1px dotted #a0a0a0; padding-bottom: 4px; margin-bottom: 4px; }
-.search-results-container .message-item:last-child { border-bottom: none; }
 
-/* --- ★★★ 窗口最终高度/排版修复 ★★★ --- */
+/* --- 窗口最终高度修复 --- */
 #search-window { height: 450px; }
 
-/* 精准控制聊天记录和搜索结果的排版，不影响其他元素 */
+/* --- ★★★ 聊天与搜索结果的精准排版优化 (最终紧凑版) ★★★ --- */
+.message-item, /* 给一个基础的定义 */
+.search-results-container .message-item {
+    padding-bottom: 4px;
+    margin-bottom: 4px;
+}
+
 #messages .message-item,
 .search-results-container .message-item {
     display: flex;
     align-items: flex-start;
+    border-bottom: 1px dotted #a0a0a0;
+    line-height: 1.6;
+}
+#messages .message-item:last-child,
+.search-results-container .message-item:last-child {
+    border-bottom: none;
 }
 #messages .timestamp,
 .search-results-container .timestamp {
-    width: 140px;
+    color: #808080;
+    font-size: 14px;
     flex-shrink: 0;
+    margin-right: 8px;
+    white-space: nowrap; /* 确保时间戳不换行 */
+}
+#messages .nickname,
+.search-results-container .nickname {
+    font-weight: bold;
+    flex-shrink: 0;
+    margin-right: 5px;
+}
+#messages .message-item span:last-child,
+.search-results-container .message-item span:last-child {
+     word-break: break-word;
+     min-width: 0; /* 允许 flex 元素被压缩和换行 */
 }
